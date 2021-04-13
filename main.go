@@ -9,6 +9,7 @@ import (
 
 var version string = "snapshot"
 var DEFAULT_TIMEOUT time.Duration = time.Duration(30) * time.Second
+var DATE_FORMAT_STRING string = "2006-01-02"
 
 type date time.Time
 
@@ -18,7 +19,7 @@ func newDate(val time.Time, p *time.Time) *date {
 }
 
 func (d *date) Set(s string) error {
-	v, err := time.Parse("2006-01-02", s)
+	v, err := time.Parse(DATE_FORMAT_STRING, s)
 	*d = date(v)
 	return err
 }
@@ -29,7 +30,7 @@ func (d *date) String() string {
     if (*time.Time) (d).IsZero() {
         return ""
     } else {
-        return (*time.Time)(d).Format("2021-12-25")
+        return (*time.Time)(d).Format(DATE_FORMAT_STRING)
     }
 }
 
