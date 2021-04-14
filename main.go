@@ -8,31 +8,6 @@ import (
 )
 
 var version string = "snapshot"
-var DEFAULT_TIMEOUT time.Duration = time.Duration(30) * time.Second
-var DATE_FORMAT_STRING string = "2006-01-02"
-
-type date time.Time
-
-func newDate(val time.Time, p *time.Time) *date {
-	*p = val
-	return (*date)(p)
-}
-
-func (d *date) Set(s string) error {
-	v, err := time.Parse(DATE_FORMAT_STRING, s)
-	*d = date(v)
-	return err
-}
-
-func (d *date) Type() string { return "date" }
-
-func (d *date) String() string {
-    if (*time.Time) (d).IsZero() {
-        return ""
-    } else {
-        return (*time.Time)(d).Format(DATE_FORMAT_STRING)
-    }
-}
 
 func main() {
 	app := &cobra.Command{
@@ -59,13 +34,12 @@ func main() {
 		Use:   "rec",
 		Short: "record current time",
 		Run: func(cmd *cobra.Command, args []string) {
-    			fmt.Println("Recording")
-    			fmt.Println(timeout.String())
+			recFunc(args[0], (uint32)(timeout.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(1),
 	}
 
-	recCmd.Flags().DurationVarP(&timeout, "timeout", "t", DEFAULT_TIMEOUT, "timeout when to end recording")
+	recCmd.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout when to end recording")
 	app.AddCommand(recCmd)
 
 	//------ MV COMMAND
@@ -73,7 +47,7 @@ func main() {
 		Use:   "mv [flags] <srcGroup>... <dstGroup>",
 		Short: "move/merge/rename groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			fmt.Println("moving")
+			fmt.Println("moving")
 		},
 		Args: cobra.MinimumNArgs(2),
 	}
@@ -84,8 +58,7 @@ func main() {
 		Use:   "del [flags] <group>",
 		Short: "delete a group or date range in a group",
 		Run: func(cmd *cobra.Command, args []string) {
-    			fmt.Println("bd: " + beginDate.String())
-    			fmt.Println("ed: " + endDate.String())
+    			delFunc(args[0], time.Time(*beginDate), time.Time(*endDate))
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -99,7 +72,7 @@ func main() {
 		Use:   "groups",
 		Short: "show available groups",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("listing groups all right")
+    			groupsFunc()
 		},
 		Args: cobra.ExactArgs(0),
 	}
@@ -110,8 +83,8 @@ func main() {
 		Use:   "list",
 		Short: "list dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			fmt.Println("bd: " + beginDate.String())
-    			fmt.Println("ed: " + endDate.String())
+			fmt.Println("bd: " + beginDate.String())
+			fmt.Println("ed: " + endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -125,8 +98,8 @@ func main() {
 		Use:   "agg",
 		Short: "aggregate dates for range into single duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			fmt.Println("bd: " + beginDate.String())
-    			fmt.Println("ed: " + endDate.String())
+			fmt.Println("bd: " + beginDate.String())
+			fmt.Println("ed: " + endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}

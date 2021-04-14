@@ -41,10 +41,10 @@ Database format idea:
 ```
 {
   "<group-name>": {
-    "timeout": 1m 00s
-    "start":   2021-01-01T07:34:59Z
-    "current": 2021-01-01T07:34:59Z
-    "record": {
+    "out": 1m 00s
+    "beg": 2021-01-01T07:34:59Z
+    "end": 2021-01-01T07:34:59Z
+    "rec": {
       "2021-01-01": 10m 35s
       "2021-01-02": 30m 35s
     }
