@@ -9,6 +9,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+var DEFAULT_TIMEOUT_IN_SECONDS uint32 = 30
 var DATE_FORMAT_STRING string = "2006-01-02"
 var SECONDS_IN_DAY uint32 = 86400
 
@@ -31,23 +32,28 @@ func opendb() (*bolt.DB, error) {
 	return db, nil
 }
 
-func getSeconds(b *bolt.Bucket, key string) uint32 {
-	var secs uint32 = 0
-	b_val := b.Get([]byte(key))
-	if b_val != nil {
-		secs = binary.BigEndian.Uint32(b_val)
-	}
-
+func bytesToSeconds(bytes []byte) uint32 {
+	if bytes == nil { return 0 }
+	secs := binary.BigEndian.Uint32(bytes)
 	if secs > SECONDS_IN_DAY {
 		secs = SECONDS_IN_DAY
 	}
-
 	return secs
+}
+
+func getSeconds(b *bolt.Bucket, key string) uint32 {
+	return bytesToSeconds(b.Get([]byte(key)))
+}
+
+func secondsToString(secs uint32) string {
+	dur := time.Duration(secs) * time.Second
+	return dur.String()
 }
 
 func setSeconds(b *bolt.Bucket, key string, secs uint32) {
 	timeout_bytes := make([]byte, 4, 4)
 	binary.BigEndian.PutUint32(timeout_bytes[:], secs)
+
 	b.Put([]byte(key), timeout_bytes) // TODO: Error handling.
 }
 
@@ -65,8 +71,24 @@ func setTimestamp(b *bolt.Bucket, key string, t time.Time) {
 	b.Put([]byte(key), raw)     // TODO: Error handling.
 }
 
+func formatTimestamp(timestamp time.Time) string {
+	return timestamp.Format(DATE_FORMAT_STRING)
+}
+
 func addTimestampToBucket(b *bolt.Bucket, beg_ts time.Time, seconds uint32) {
-	date_key := beg_ts.Format(DATE_FORMAT_STRING)
+	date_key := formatTimestamp(beg_ts)
 	old_seconds := getSeconds(b, date_key)
 	setSeconds(b, date_key, old_seconds+seconds)
+}
+
+func getTimeout(b *bolt.Bucket) uint32 {
+	secs := getSeconds(b, "out")
+	if secs == 0 {
+		return DEFAULT_TIMEOUT_IN_SECONDS
+	}
+	return secs
+}
+
+func setTimeout(b *bolt.Bucket, timeout_in_seconds uint32) {
+	setSeconds(b, "out", timeout_in_seconds)
 }

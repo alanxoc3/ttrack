@@ -3,6 +3,8 @@ package main
 import (
 	"os/user"
 	"time"
+
+	bolt "go.etcd.io/bbolt"
 )
 
 type date time.Time
@@ -33,5 +35,37 @@ func getHomeFilePath(filename string) (string, error) {
 		return usr.HomeDir + "/.config/ttrack/" + filename, nil
 	} else {
 		return "", err
+	}
+}
+
+func viewCmd(f func(*bolt.Tx) error) {
+	db, err := opendb()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.View(func(tx *bolt.Tx) error {
+		return f(tx)
+	})
+
+	if err != nil {
+		panic(err)
+	}
+}
+
+func updateCmd(f func(*bolt.Tx) error) {
+	db, err := opendb()
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		return f(tx)
+	})
+
+	if err != nil {
+		panic(err)
 	}
 }

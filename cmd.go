@@ -7,28 +7,50 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var DEFAULT_TIMEOUT_IN_SECONDS uint32 = 30
-
-func getTimeout(b *bolt.Bucket) uint32 {
-	secs := getSeconds(b, "out")
-	if secs == 0 {
-		return DEFAULT_TIMEOUT_IN_SECONDS
+func addSecondToMap(m map[string]uint32, key string, num uint32) {
+	if num == 0 { return }
+	var base_val uint32
+	if v, ok := m[key]; ok { base_val = v }
+	m[key] = base_val + num
+	if m[key] > SECONDS_IN_DAY {
+		m[key] = SECONDS_IN_DAY
 	}
-	return secs
 }
 
-func setTimeout(b *bolt.Bucket, timeout_in_seconds uint32) {
-	setSeconds(b, "out", timeout_in_seconds)
+func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
+	m := map[string]uint32{}
+
+	gb := tx.Bucket([]byte(group))
+	if gb == nil { return m }
+
+	beg_ts, _, duration, _ := recLogic(time.Now(), getTimestamp(gb, "beg"), getTimestamp(gb, "end"), getTimeout(gb))
+	addSecondToMap(m, formatTimestamp(beg_ts), duration)
+
+	rb := gb.Bucket([]byte("rec"))
+	if rb == nil { return m }
+
+	c := rb.Cursor()
+
+	for k, v := c.First(); k != nil; k, v = c.Next() {
+		addSecondToMap(m, string(k), bytesToSeconds(v))
+	}
+
+	return m
+}
+
+func listFunc(group string) {
+	viewCmd(func(tx *bolt.Tx) error {
+    	        m := getDateMap(tx, group)
+    	        for k, v := range m {
+			fmt.Printf("%s: %s\n", k, secondsToString(v))
+    	        }
+
+		return nil
+	})
 }
 
 func groupsFunc() {
-	db, err := opendb()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.View(func(tx *bolt.Tx) error {
+	viewCmd(func(tx *bolt.Tx) error {
 		c := tx.Cursor()
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
@@ -39,15 +61,8 @@ func groupsFunc() {
 	})
 }
 
-
 func delFunc(group string, beg_ts, end_ts time.Time) {
-	db, err := opendb()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Update(func(tx *bolt.Tx) error {
+	updateCmd(func(tx *bolt.Tx) error {
 		gb := tx.Bucket([]byte(group))
 		if gb == nil {
 			return nil
@@ -60,32 +75,20 @@ func delFunc(group string, beg_ts, end_ts time.Time) {
 
 		return nil
 	})
-
-	if beg_ts.IsZero() && end_ts.IsZero() {
-
-		fmt.Println("bd: " + beg_ts.String())
-		fmt.Println("ed: " + end_ts.String())
-	}
 }
 
 func recFunc(group string, timeout_param uint32) {
-	db, err := opendb()
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Update(func(tx *bolt.Tx) error {
+	updateCmd(func(tx *bolt.Tx) error {
 		b, err := tx.CreateBucketIfNotExists([]byte(group))
 		if err != nil {
 			return err
 		}
 
 		old_beg_ts := getTimestamp(b, "beg")
-		beg_ts, end_ts, duration := recLogic(time.Now(), old_beg_ts, getTimestamp(b, "end"), getTimeout(b))
+		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, getTimestamp(b, "end"), getTimeout(b))
 
-		if duration > 0 {
-			rb, err := tx.CreateBucketIfNotExists([]byte("rec"))
+		if finish && duration > 0 {
+			rb, err := b.CreateBucketIfNotExists([]byte("rec"))
 			if err != nil {
 				return err
 			}
@@ -107,7 +110,4 @@ func recFunc(group string, timeout_param uint32) {
 
 		return nil
 	})
-	if err != nil {
-		panic(err)
-	}
 }

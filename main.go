@@ -83,8 +83,7 @@ func main() {
 		Use:   "list",
 		Short: "list dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("bd: " + beginDate.String())
-			fmt.Println("ed: " + endDate.String())
+    			listFunc(args[0])
 		},
 		Args: cobra.ExactArgs(1),
 	}
