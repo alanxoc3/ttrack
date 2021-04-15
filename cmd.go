@@ -38,6 +38,35 @@ func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
 	return m
 }
 
+func setFunc(group string, timestamp time.Time, duration uint32) {
+	updateCmd(func(tx *bolt.Tx) error {
+		gb, err := tx.CreateBucketIfNotExists([]byte(group))
+		if err != nil { return err }
+
+		rb, err := gb.CreateBucketIfNotExists([]byte("rec"))
+		if err != nil { return err }
+
+		date_key := formatTimestamp(timestamp)
+		setSeconds(rb, date_key, duration)
+
+		return nil
+	})
+}
+
+func aggFunc(group string) {
+	viewCmd(func(tx *bolt.Tx) error {
+    	        m := getDateMap(tx, group)
+    	        var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
+    	        for _, v := range m {
+        	        secs += v
+    	        }
+
+		fmt.Printf("%s\n", secondsToString(secs))
+
+		return nil
+	})
+}
+
 func listFunc(group string) {
 	viewCmd(func(tx *bolt.Tx) error {
     	        m := getDateMap(tx, group)

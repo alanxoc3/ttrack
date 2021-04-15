@@ -15,8 +15,8 @@ func main() {
 		Short: "A time tracking program.",
 	}
 
-	beginDate := newDate(time.Time{}, &time.Time{})
-	endDate := newDate(time.Time{}, &time.Time{})
+	beginDate := &date{}
+	endDate := &date{}
 
 	//------ VERSION COMMAND
 	versionCmd := &cobra.Command{
@@ -97,8 +97,7 @@ func main() {
 		Use:   "agg",
 		Short: "aggregate dates for range into single duration",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("bd: " + beginDate.String())
-			fmt.Println("ed: " + endDate.String())
+    			aggFunc(args[0])
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -112,7 +111,14 @@ func main() {
 		Use:   "set <group> <date> <duration>",
 		Short: "sets the duration for a group's date",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("set set set.")
+    			g := args[0]
+    			ts, tserr := dateStrToTimestamp(args[1])
+    			if tserr != nil { panic(tserr) }
+
+    			dur, durerr := time.ParseDuration(args[2])
+    			if durerr != nil { panic(durerr) }
+
+    			setFunc(g, ts, (uint32)(dur.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(3),
 	}

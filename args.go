@@ -9,13 +9,12 @@ import (
 
 type date time.Time
 
-func newDate(val time.Time, p *time.Time) *date {
-	*p = val
-	return (*date)(p)
+func dateStrToTimestamp(datestr string) (time.Time, error) {
+	return time.Parse(DATE_FORMAT_STRING, datestr)
 }
 
 func (d *date) Set(s string) error {
-	v, err := time.Parse(DATE_FORMAT_STRING, s)
+	v, err := dateStrToTimestamp(s)
 	*d = date(v)
 	return err
 }
