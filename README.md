@@ -10,10 +10,11 @@ ttrack --help
 ttrack help
 ttrack version
 
-ttrack rec <group-name> --timeout=1d1h1m1s
-ttrack set <group-name> 2021-01-03 10m30s
+ttrack rec <group> 10m30s
+ttrack timer <group> 10m30s
+ttrack set <group> 2021-01-03 10m30s
 
-ttrack mv <group>... <group>
+ttrack mv <group> <group>
 ttrack del <group> --begin-date=2021-01-01 --end-date=2021-01-03
 
 ttrack groups
@@ -29,12 +30,6 @@ ttrack list <group> --begin-date=2021-01-01 --end-date=2021-01-04
 
 ttrack agg <group> --begin-date=2021-01-01 --end-date=2021-01-04
   1h40m13s
-  0s
-```
-
-Config file:
-```
-default_timeout=30s
 ```
 
 Database format idea:
