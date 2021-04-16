@@ -54,30 +54,51 @@ func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
 	return m
 }
 
-func mvFunc(srcGroup string, dstGroup string) {
+func cpFunc(srcGroup string, dstGroup string) {
 	updateCmd(func(tx *bolt.Tx) error {
-		srcMap := getDateMap(tx, srcGroup)
-		dstMap := getDateMap(tx, dstGroup)
-
-		for k, v := range srcMap {
-    			addSecondToMap(dstMap, k, v)
+		m := getDateMap(tx, srcGroup)
+		if len(m) == 0 {
+			return nil
 		}
 
-		for k, v := range srcMap {
-    			addSecondToMap(dstMap, k, v)
+		dstBucket, err := tx.CreateBucketIfNotExists([]byte(dstGroup))
+		if err != nil { return err }
+
+		rec, err := dstBucket.CreateBucketIfNotExists([]byte("rec"))
+		if err != nil { return err }
+
+		for k, v := range m {
+			addTimestampToBucket(rec, k, v)
 		}
 
 		return nil
 	})
 }
 
+type bucketInterface interface {
+	Bucket([]byte)*bolt.Bucket
+	CreateBucket([]byte)(*bolt.Bucket, error)
+}
+
+func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondition bool) (*bolt.Bucket, error) {
+	b := parent.Bucket([]byte(key))
+	if b == nil && nilCondition {
+		return nil, nil
+	} else if b == nil {
+		var err error
+		b, err = parent.CreateBucket([]byte(key))
+		if err != nil { return nil, err }
+	}
+	return b, nil
+}
+
 func setFunc(group string, timestamp time.Time, duration uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
-		gb, err := tx.CreateBucketIfNotExists([]byte(group))
-		if err != nil { return err }
+		gb, err := getOrCreateBucketConditionally(tx, group, duration == 0)
+		if gb == nil || err != nil { return err }
 
-		rb, err := gb.CreateBucketIfNotExists([]byte("rec"))
-		if err != nil { return err }
+		rb, err := getOrCreateBucketConditionally(gb, "rec", duration == 0)
+		if rb == nil || err != nil { return err }
 
 		date_key := formatTimestamp(timestamp)
 		setSeconds(rb, date_key, duration)
@@ -100,11 +121,11 @@ func aggFunc(group string) {
 	})
 }
 
-func listFunc(group string) {
+func listFunc(group string, beg_ts, end_ts time.Time) {
 	viewCmd(func(tx *bolt.Tx) error {
     	        m := getDateMap(tx, group)
     	        for k, v := range m {
-			fmt.Printf("%s: %s\n", k, secondsToString(v))
+			fmt.Printf("%s %s\n", k, secondsToString(v))
     	        }
 
 		return nil
@@ -123,28 +144,20 @@ func groupsFunc() {
 	})
 }
 
-func delFunc(group string, beg_ts, end_ts time.Time) {
+func delFunc(group string) {
 	updateCmd(func(tx *bolt.Tx) error {
-		gb := tx.Bucket([]byte(group))
-		if gb == nil {
-			return nil
-		}
+		b := tx.Bucket([]byte(group))
+		if b == nil { return nil }
 
-		if beg_ts.IsZero() && end_ts.IsZero() {
-    			tx.DeleteBucket([]byte(group))
-			return nil
-		}
-
+		tx.DeleteBucket([]byte(group))
 		return nil
 	})
 }
 
 func recFunc(group string, timeout_param uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
-		b, err := tx.CreateBucketIfNotExists([]byte(group))
-		if err != nil {
-			return err
-		}
+		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
+		if b == nil || err != nil { return err }
 
 		old_beg_ts, old_end_ts, old_timeout, _ := expandGroup(b)
 		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, old_end_ts, old_timeout)
@@ -155,7 +168,7 @@ func recFunc(group string, timeout_param uint32) {
 				return err
 			}
 
-			addTimestampToBucket(rb, old_beg_ts, duration)
+			addTimestampToBucket(rb, formatTimestamp(old_beg_ts), duration)
 		}
 
 		if !old_beg_ts.Equal(beg_ts) {

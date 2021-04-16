@@ -43,35 +43,33 @@ func main() {
 
 	app.AddCommand(recCmd)
 
-	//------ MV COMMAND
-	mvCmd := &cobra.Command{
-		Use:   "mv <srcGroup> <dstGroup>",
-		Short: "move/merge/rename groups",
+	//------ CP COMMAND
+	cpCmd := &cobra.Command{
+		Use:   "cp <srcGroup> <dstGroup>",
+		Short: "copy/merge groups",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("moving")
+    			cpFunc(args[0], args[1])
 		},
 		Args: cobra.ExactArgs(2),
 	}
-	app.AddCommand(mvCmd)
+	app.AddCommand(cpCmd)
 
 	//------ DEL COMMAND
 	delCmd := &cobra.Command{
-		Use:   "del [flags] <group>",
-		Short: "delete a group or date range in a group",
+		Use:   "del <group>",
+		Short: "delete a group",
 		Run: func(cmd *cobra.Command, args []string) {
-    			delFunc(args[0], time.Time(*beginDate), time.Time(*endDate))
+    			delFunc(args[0])
 		},
 		Args: cobra.ExactArgs(1),
 	}
 
-	delCmd.Flags().VarPF(beginDate, "begin-date", "b", "begin date for deletion range")
-	delCmd.Flags().VarPF(endDate, "end-date", "e", "end date for deletion range")
 	app.AddCommand(delCmd)
 
 	//------ GROUPS COMMAND
 	groupsCmd := &cobra.Command{
 		Use:   "groups",
-		Short: "show available groups",
+		Short: "show groups",
 		Run: func(cmd *cobra.Command, args []string) {
     			groupsFunc()
 		},
@@ -84,7 +82,7 @@ func main() {
 		Use:   "list",
 		Short: "list dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			listFunc(args[0])
+    			listFunc(args[0], time.Time(*beginDate), time.Time(*endDate))
 		},
 		Args: cobra.ExactArgs(1),
 	}

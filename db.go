@@ -54,7 +54,11 @@ func setSeconds(b *bolt.Bucket, key string, secs uint32) {
 	timeout_bytes := make([]byte, 4, 4)
 	binary.BigEndian.PutUint32(timeout_bytes[:], secs)
 
-	b.Put([]byte(key), timeout_bytes) // TODO: Error handling.
+	if secs == 0 {
+		b.Delete([]byte(key))
+	} else {
+		b.Put([]byte(key), timeout_bytes) // TODO: Error handling.
+	}
 }
 
 func getTimestamp(b *bolt.Bucket, key string) time.Time {
@@ -75,8 +79,7 @@ func formatTimestamp(timestamp time.Time) string {
 	return timestamp.Format(DATE_FORMAT_STRING)
 }
 
-func addTimestampToBucket(b *bolt.Bucket, beg_ts time.Time, seconds uint32) {
-	date_key := formatTimestamp(beg_ts)
+func addTimestampToBucket(b *bolt.Bucket, date_key string, seconds uint32) {
 	old_seconds := getSeconds(b, date_key)
 	setSeconds(b, date_key, old_seconds+seconds)
 }

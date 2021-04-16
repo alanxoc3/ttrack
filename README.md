@@ -1,8 +1,6 @@
 # ttrack
 Cli based productivity time manager.
 
-WIP.
-
 Api idea:
 ```
 ttrack 
@@ -10,17 +8,15 @@ ttrack --help
 ttrack help
 ttrack version
 
-ttrack rec <group> 10m30s
-ttrack timer <group> 10m30s
-ttrack set <group> 2021-01-03 10m30s
-
-ttrack mv <group> <group>
-ttrack del <group> --begin-date=2021-01-01 --end-date=2021-01-03
-
 ttrack groups
-  <group-name-1>
-  <group-name-2>
-  ...
+  <group-1>
+  <group-2>
+
+ttrack rec <group> 10m30s
+ttrack set <group> 2021-01-03 10m30s
+ttrack timer <group> 10m30s
+ttrack del <group>
+ttrack cp <group> <group> --begin-date=2021-01-01 --end-date=2021-01-03
 
 ttrack list <group> --begin-date=2021-01-01 --end-date=2021-01-04
   2021-01-01: 10m
@@ -32,7 +28,7 @@ ttrack agg <group> --begin-date=2021-01-01 --end-date=2021-01-04
   1h40m13s
 ```
 
-Database format idea:
+Bolt db format:
 ```
 {
   "<group-name>": {
