@@ -17,25 +17,58 @@ func addSecondToMap(m map[string]uint32, key string, num uint32) {
 	}
 }
 
+func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
+	return tx.Bucket([]byte(group))
+}
+
+func expandGroup(b *bolt.Bucket) (time.Time, time.Time, uint32, *bolt.Bucket) {
+	return getTimestamp(b, "beg"), getTimestamp(b, "end"), getSeconds(b, "out"), b.Bucket([]byte("rec"))
+}
+
+func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
+	gb := tx.Bucket([]byte(group))
+	if gb == nil { return nil }
+
+	rb := gb.Bucket([]byte("rec"))
+	return rb
+}
+
 func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
 	m := map[string]uint32{}
 
-	gb := tx.Bucket([]byte(group))
+	gb := getGroupBucket(tx, group)
 	if gb == nil { return m }
 
-	beg_ts, _, duration, _ := recLogic(time.Now(), getTimestamp(gb, "beg"), getTimestamp(gb, "end"), getTimeout(gb))
+	beg_ts, end_ts, timeout, rec := expandGroup(gb)
+	_, _, duration, _ := recLogic(time.Now(), beg_ts, end_ts, timeout)
 	addSecondToMap(m, formatTimestamp(beg_ts), duration)
 
-	rb := gb.Bucket([]byte("rec"))
-	if rb == nil { return m }
+	if rec == nil { return m }
 
-	c := rb.Cursor()
+	c := rec.Cursor()
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
 		addSecondToMap(m, string(k), bytesToSeconds(v))
 	}
 
 	return m
+}
+
+func mvFunc(srcGroup string, dstGroup string) {
+	updateCmd(func(tx *bolt.Tx) error {
+		srcMap := getDateMap(tx, srcGroup)
+		dstMap := getDateMap(tx, dstGroup)
+
+		for k, v := range srcMap {
+    			addSecondToMap(dstMap, k, v)
+		}
+
+		for k, v := range srcMap {
+    			addSecondToMap(dstMap, k, v)
+		}
+
+		return nil
+	})
 }
 
 func setFunc(group string, timestamp time.Time, duration uint32) {
@@ -113,8 +146,8 @@ func recFunc(group string, timeout_param uint32) {
 			return err
 		}
 
-		old_beg_ts := getTimestamp(b, "beg")
-		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, getTimestamp(b, "end"), getTimeout(b))
+		old_beg_ts, old_end_ts, old_timeout, _ := expandGroup(b)
+		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, old_end_ts, old_timeout)
 
 		if finish && duration > 0 {
 			rb, err := b.CreateBucketIfNotExists([]byte("rec"))
@@ -131,11 +164,8 @@ func recFunc(group string, timeout_param uint32) {
 		setTimestamp(b, "end", end_ts)
 
 		if timeout_param > 0 {
-			setTimeout(b, timeout_param)
+			setSeconds(b, "out", timeout_param)
 		}
-
-		fmt.Println("beg_ts:", beg_ts)
-		fmt.Println("end_ts:", end_ts)
 
 		return nil
 	})

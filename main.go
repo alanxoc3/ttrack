@@ -29,27 +29,28 @@ func main() {
 	app.AddCommand(versionCmd)
 
 	//------ REC COMMAND
-	var timeout time.Duration
 	recCmd := &cobra.Command{
-		Use:   "rec",
+		Use:   "rec <group> <timeout>",
 		Short: "record current time",
 		Run: func(cmd *cobra.Command, args []string) {
-			recFunc(args[0], (uint32)(timeout.Milliseconds()/1000))
+    			dur, durerr := time.ParseDuration(args[1])
+    			if durerr != nil { panic(durerr) }
+
+			recFunc(args[0], (uint32)(dur.Milliseconds()/1000))
 		},
-		Args: cobra.ExactArgs(1),
+		Args: cobra.ExactArgs(2),
 	}
 
-	recCmd.Flags().DurationVarP(&timeout, "timeout", "t", 0, "timeout when to end recording")
 	app.AddCommand(recCmd)
 
 	//------ MV COMMAND
 	mvCmd := &cobra.Command{
-		Use:   "mv [flags] <srcGroup>... <dstGroup>",
+		Use:   "mv <srcGroup> <dstGroup>",
 		Short: "move/merge/rename groups",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("moving")
 		},
-		Args: cobra.MinimumNArgs(2),
+		Args: cobra.ExactArgs(2),
 	}
 	app.AddCommand(mvCmd)
 
