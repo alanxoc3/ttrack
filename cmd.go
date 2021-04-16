@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	bolt "go.etcd.io/bbolt"
@@ -10,15 +11,23 @@ import (
 func cpFunc(srcGroup string, dstGroup string) {
 	updateCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, srcGroup)
-		if len(m) == 0 { return nil }
+		if len(m) == 0 {
+			return nil
+		}
 
 		dstBucket, err := tx.CreateBucketIfNotExists([]byte(dstGroup))
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
 		rec, err := dstBucket.CreateBucketIfNotExists([]byte("rec"))
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 
-		for k, v := range m { addTimestampToBucket(rec, k, v) }
+		for k, v := range m {
+			addTimestampToBucket(rec, k, v)
+		}
 		return nil
 	})
 }
@@ -26,10 +35,14 @@ func cpFunc(srcGroup string, dstGroup string) {
 func setFunc(group string, timestamp time.Time, duration uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
 		gb, err := getOrCreateBucketConditionally(tx, group, duration == 0)
-		if gb == nil || err != nil { return err }
+		if gb == nil || err != nil {
+			return err
+		}
 
 		rb, err := getOrCreateBucketConditionally(gb, "rec", duration == 0)
-		if rb == nil || err != nil { return err }
+		if rb == nil || err != nil {
+			return err
+		}
 
 		date_key := formatTimestamp(timestamp)
 		setSeconds(rb, date_key, duration)
@@ -40,11 +53,11 @@ func setFunc(group string, timestamp time.Time, duration uint32) {
 
 func aggFunc(group string) {
 	viewCmd(func(tx *bolt.Tx) error {
-    	        m := getDateMap(tx, group)
-    	        var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
-    	        for _, v := range m {
-        	        secs += v
-    	        }
+		m := getDateMap(tx, group)
+		var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
+		for _, v := range m {
+			secs += v
+		}
 
 		fmt.Printf("%s\n", secondsToString(secs))
 
@@ -53,14 +66,22 @@ func aggFunc(group string) {
 }
 
 func listFunc(group string, beg_ts, end_ts time.Time) {
-	viewCmd(func(tx *bolt.Tx) error {
-    	        m := getDateMap(tx, group)
-    	        for k, v := range m {
-			fmt.Printf("%s %s\n", k, secondsToString(v))
-    	        }
+	dateMap := map[string]uint32{}
 
+	viewCmd(func(tx *bolt.Tx) error {
+		dateMap = getDateMap(tx, group)
 		return nil
 	})
+
+	dates := make([]string, 0, len(dateMap))
+	for k := range dateMap {
+		dates = append(dates, k)
+	}
+
+	sort.Strings(dates)
+	for _, d := range dates {
+		fmt.Printf("%s %s\n", d, secondsToString(dateMap[d]))
+	}
 }
 
 func groupsFunc() {
@@ -78,7 +99,9 @@ func groupsFunc() {
 func delFunc(group string) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(group))
-		if b == nil { return nil }
+		if b == nil {
+			return nil
+		}
 
 		tx.DeleteBucket([]byte(group))
 		return nil
@@ -88,7 +111,9 @@ func delFunc(group string) {
 func recFunc(group string, timeout_param uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
-		if b == nil || err != nil { return err }
+		if b == nil || err != nil {
+			return err
+		}
 
 		old_beg_ts, old_end_ts, old_timeout, _ := expandGroup(b)
 		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, old_end_ts, old_timeout)
