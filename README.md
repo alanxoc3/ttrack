@@ -1,5 +1,12 @@
 # ttrack
-Cli based productivity time manager.
+A cli based app meant to record how long you do things on a daily basis.
+
+TODO: Explain how this compares to other time tracking programs:
+- [Watson](https://tailordev.github.io/Watson/)
+- [Gtm](https://github.com/laughedelic/gtm)
+- [ActivityWatch](https://github.com/ActivityWatch/activitywatch)
+- [WakaTime](https://wakatime.com/)
+- [SelfSpy](https://github.com/selfspy/selfspy)
 
 ## Integrations
 ### Kakoune
@@ -8,7 +15,7 @@ Add this to your `.kakrc`:
 hook global RawKey . %{
   evaluate-commands %sh{
     {
-      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "$kak_bufname" 5s
+      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "kak:$kak_bufname" 5s
     } > /dev/null 2>&1 < /dev/null &
   }
 }
