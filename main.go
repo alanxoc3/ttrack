@@ -48,10 +48,12 @@ func main() {
 		Use:   "cp <srcGroup> <dstGroup>",
 		Short: "copy/merge groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			cpFunc(args[0], args[1])
+    			cpFunc(args[0], args[1], beginDate.String(), endDate.String())
 		},
 		Args: cobra.ExactArgs(2),
 	}
+	cpCmd.Flags().VarPF(beginDate, "begin-date", "b", "only copy dates after or equal to this")
+	cpCmd.Flags().VarPF(endDate, "end-date", "e", "only copy dates before or equal to this")
 	app.AddCommand(cpCmd)
 
 	//------ DEL COMMAND
@@ -82,13 +84,13 @@ func main() {
 		Use:   "list",
 		Short: "list dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			listFunc(args[0], time.Time(*beginDate), time.Time(*endDate))
+    			listFunc(args[0], beginDate.String(), endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}
 
-	listCmd.Flags().VarPF(beginDate, "begin-date", "b", "only list dates after this")
-	listCmd.Flags().VarPF(endDate, "end-date", "e", "only list dates before this")
+	listCmd.Flags().VarPF(beginDate, "begin-date", "b", "only list dates after or equal to this")
+	listCmd.Flags().VarPF(endDate, "end-date", "e", "only list dates before or equal to this")
 	app.AddCommand(listCmd)
 
 	//------ AGG COMMAND
@@ -96,13 +98,13 @@ func main() {
 		Use:   "agg",
 		Short: "aggregate dates for range into single duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			aggFunc(args[0])
+    			aggFunc(args[0], beginDate.String(), endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}
 
-	aggCmd.Flags().VarPF(beginDate, "begin-date", "b", "only aggregate dates after this")
-	aggCmd.Flags().VarPF(endDate, "end-date", "e", "only aggregate dates before this")
+	aggCmd.Flags().VarPF(beginDate, "begin-date", "b", "only aggregate dates after or equal to this")
+	aggCmd.Flags().VarPF(endDate, "end-date", "e", "only aggregate dates before or equal to this")
 	app.AddCommand(aggCmd)
 
 	//------ SET COMMAND

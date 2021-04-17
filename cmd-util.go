@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 	bolt "go.etcd.io/bbolt"
 )
@@ -66,7 +67,12 @@ func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	return rb
 }
 
-func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
+func is_date_str_in_range(date, beg_date, end_date string) bool {
+	return (beg_date == "" || strings.Compare(beg_date, date) <= 0) &&
+		(end_date == "" || strings.Compare(end_date, date) >= 0)
+}
+
+func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]uint32 {
 	m := map[string]uint32{}
 
 	gb := getGroupBucket(tx, group)
@@ -74,16 +80,21 @@ func getDateMap(tx *bolt.Tx, group string) map[string]uint32 {
 
 	beg_ts, end_ts, timeout, rec := expandGroup(gb)
 	_, _, duration, _ := recLogic(time.Now(), beg_ts, end_ts, timeout)
-	addSecondToMap(m, formatTimestamp(beg_ts), duration)
+	beg_ts_str := formatTimestamp(beg_ts)
+	if is_date_str_in_range(beg_ts_str, beg_bounds, end_bounds) {
+		addSecondToMap(m, formatTimestamp(beg_ts), duration)
+	}
 
 	if rec == nil { return m }
 
 	c := rec.Cursor()
 
 	for k, v := c.First(); k != nil; k, v = c.Next() {
-		addSecondToMap(m, string(k), bytesToSeconds(v))
+    		dateStr := string(k)
+    		if is_date_str_in_range(dateStr, beg_bounds, end_bounds) {
+			addSecondToMap(m, string(k), bytesToSeconds(v))
+    		}
 	}
 
 	return m
 }
-

@@ -22,11 +22,7 @@ func (d *date) Set(s string) error {
 func (d *date) Type() string { return "date" }
 
 func (d *date) String() string {
-	if (*time.Time)(d).IsZero() {
-		return ""
-	} else {
-		return (*time.Time)(d).Format(DATE_FORMAT_STRING)
-	}
+	return formatTimestamp(*(*time.Time)(d))
 }
 
 func getHomeFilePath(filename string) (string, error) {

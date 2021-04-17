@@ -8,9 +8,9 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func cpFunc(srcGroup string, dstGroup string) {
+func cpFunc(srcGroup, dstGroup, beg_date, end_date string) {
 	updateCmd(func(tx *bolt.Tx) error {
-		m := getDateMap(tx, srcGroup)
+		m := getDateMap(tx, srcGroup, beg_date, end_date)
 		if len(m) == 0 {
 			return nil
 		}
@@ -34,6 +34,10 @@ func cpFunc(srcGroup string, dstGroup string) {
 
 func setFunc(group string, timestamp time.Time, duration uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
+		if timestamp.IsZero() {
+			return fmt.Errorf("you can't set the zero date")
+		}
+
 		gb, err := getOrCreateBucketConditionally(tx, group, duration == 0)
 		if gb == nil || err != nil {
 			return err
@@ -51,25 +55,27 @@ func setFunc(group string, timestamp time.Time, duration uint32) {
 	})
 }
 
-func aggFunc(group string) {
+func aggFunc(group, beg_date, end_date string) {
+	var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
+
 	viewCmd(func(tx *bolt.Tx) error {
-		m := getDateMap(tx, group)
-		var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
+		m := getDateMap(tx, group, beg_date, end_date)
 		for _, v := range m {
 			secs += v
 		}
 
-		fmt.Printf("%s\n", secondsToString(secs))
-
 		return nil
 	})
+
+	fmt.Printf("%s\n", secondsToString(secs))
+
 }
 
-func listFunc(group string, beg_ts, end_ts time.Time) {
+func listFunc(group, beg_date, end_date string) {
 	dateMap := map[string]uint32{}
 
 	viewCmd(func(tx *bolt.Tx) error {
-		dateMap = getDateMap(tx, group)
+		dateMap = getDateMap(tx, group, beg_date, end_date)
 		return nil
 	})
 

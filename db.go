@@ -76,6 +76,9 @@ func setTimestamp(b *bolt.Bucket, key string, t time.Time) {
 }
 
 func formatTimestamp(timestamp time.Time) string {
+	if timestamp.IsZero() {
+		return ""
+	}
 	return timestamp.Format(DATE_FORMAT_STRING)
 }
 
