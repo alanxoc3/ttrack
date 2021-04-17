@@ -85,15 +85,22 @@ func listFunc(group string, beg_ts, end_ts time.Time) {
 }
 
 func groupsFunc() {
+	groupList := []string{}
 	viewCmd(func(tx *bolt.Tx) error {
 		c := tx.Cursor()
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			fmt.Printf("%s\n", k)
+			groupList = append(groupList, string(k))
 		}
 
 		return nil
 	})
+
+	sort.Strings(groupList)
+	for _, g := range groupList {
+		fmt.Printf("%s\n", g)
+	}
+
 }
 
 func delFunc(group string) {
