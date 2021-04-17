@@ -1,6 +1,20 @@
 # ttrack
 Cli based productivity time manager.
 
+## Integrations
+### Kakoune
+Add this to your `.kakrc`:
+```
+hook global RawKey . %{
+  evaluate-commands %sh{
+    {
+      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "$kak_bufname" 5s
+    } > /dev/null 2>&1 < /dev/null &
+  }
+}
+```
+
+## Notes
 Api idea:
 ```
 ttrack 
