@@ -22,6 +22,12 @@ hook global RawKey . %{
 ```
 
 ## Notes
+Groups naming rules:
+- `.tt` will be removed if at end of group/subgroup.
+- Name cannot start with a `.`.
+- Slashes denote sub groups.
+- Timeout, begin ts, & end ts all go in cache.
+
 Api idea:
 ```
 ttrack 
@@ -29,23 +35,34 @@ ttrack --help
 ttrack help
 ttrack version
 
-ttrack groups
+ttrack rec <group>... 10m30s
+  # Only sets the cache if possible. May update files too.
+
+ttrack set <group>... 2021-01-03:+20m30s
+ttrack set <group>... 2021-01-03:-30m
+ttrack set <group>... :-30m
+
+ttrack del <group>... --recursive
+  # Removes both from cache and filesystem.
+
+ttrack mv <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-03 --recursive
+ttrack cp <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-03 --recursive
+
+ttrack tidy
+  # Cleans the cache file.
+  # Formats all '.tt' files.
+  
+ttrack show [<group>]... --recursive
   <group-1>
-  <group-2>
+  <group-1>/<sub-group
 
-ttrack rec <group> 10m30s
-ttrack set <group> 2021-01-03 10m30s
-ttrack timer <group> 10m30s
-ttrack del <group>
-ttrack cp <group> <group> --begin-date=2021-01-01 --end-date=2021-01-03
+ttrack list <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
+  2021-01-01:10m
+  2021-01-02:13s
+  2021-01-03:30m
+  2021-01-04:1h
 
-ttrack list <group> --begin-date=2021-01-01 --end-date=2021-01-04
-  2021-01-01: 10m
-  2021-01-02: 13s
-  2021-01-03: 30m
-  2021-01-04: 1h
-
-ttrack agg <group> --begin-date=2021-01-01 --end-date=2021-01-04
+ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
   1h40m13s
 ```
 
