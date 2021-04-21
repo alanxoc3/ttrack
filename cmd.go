@@ -35,7 +35,7 @@ func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	})
 }
 
-func setFunc(group string, timestamp date.Date, duration uint32) {
+func setFunc(group string, timestamp date.Date, duration seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
@@ -59,7 +59,7 @@ func setFunc(group string, timestamp date.Date, duration uint32) {
 }
 
 func aggFunc(group, beg_date, end_date string) {
-	var secs uint32 // This limits the agg output to 136 years. Meh, I won't live that long.
+	var secs seconds // This limits the agg output to 136 years. Meh, I won't live that long.
 
 	viewCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, group, beg_date, end_date)
@@ -75,7 +75,7 @@ func aggFunc(group, beg_date, end_date string) {
 }
 
 func viewFunc(group string, beg_date, end_date date.Date) {
-	dateMap := map[string]uint32{}
+	dateMap := map[string]seconds{}
 
 	viewCmd(func(tx *bolt.Tx) error {
 		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
@@ -124,7 +124,7 @@ func delFunc(group string) {
 	})
 }
 
-func recFunc(group string, timeout_param uint32) {
+func recFunc(group string, timeout_param seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {

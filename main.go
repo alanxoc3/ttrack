@@ -37,7 +37,7 @@ func main() {
     			dur, durerr := time.ParseDuration(args[1])
     			if durerr != nil { panic(durerr) }
 
-			recFunc(args[0], (uint32)(dur.Milliseconds()/1000))
+			recFunc(args[0], seconds(dur.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(2),
 	}
@@ -120,7 +120,7 @@ func main() {
     			dur, durerr := time.ParseDuration(args[2])
     			if durerr != nil { panic(durerr) }
 
-    			setFunc(g, *ts, (uint32)(dur.Milliseconds()/1000))
+    			setFunc(g, *ts, seconds(dur.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(3),
 	}

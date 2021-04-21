@@ -10,7 +10,7 @@ import (
 )
 
 var DATE_FORMAT_STRING string = "2006-01-02"
-var SECONDS_IN_DAY uint32 = 86400
+var SECONDS_IN_DAY seconds = 86400
 
 func opendb() (*bolt.DB, error) {
 	dbpath, err := getHomeFilePath("db")
@@ -31,28 +31,28 @@ func opendb() (*bolt.DB, error) {
 	return db, nil
 }
 
-func bytesToSeconds(bytes []byte) uint32 {
+func bytesToSeconds(bytes []byte) seconds {
 	if bytes == nil { return 0 }
-	secs := binary.BigEndian.Uint32(bytes)
+	secs := seconds(binary.BigEndian.Uint32(bytes))
 	if secs > SECONDS_IN_DAY {
 		secs = SECONDS_IN_DAY
 	}
 	return secs
 }
 
-func getSeconds(b *bolt.Bucket, key string) uint32 {
+func getSeconds(b *bolt.Bucket, key string) seconds {
 	return bytesToSeconds(b.Get([]byte(key)))
 }
 
-func secondsToString(secs uint32) string {
+func secondsToString(secs seconds) string {
 	dur := time.Duration(secs) * time.Second
 	return dur.String()
 }
 
-func setSeconds(b *bolt.Bucket, key string, secs uint32) {
+func setSeconds(b *bolt.Bucket, key string, secs seconds) {
 	if secs > SECONDS_IN_DAY { secs = SECONDS_IN_DAY }
 	timeout_bytes := make([]byte, 4, 4)
-	binary.BigEndian.PutUint32(timeout_bytes[:], secs)
+	binary.BigEndian.PutUint32(timeout_bytes[:], uint32(secs))
 
 	if secs == 0 {
 		b.Delete([]byte(key))
@@ -82,7 +82,7 @@ func formatTimestamp(timestamp time.Time) string {
 	return timestamp.Format(DATE_FORMAT_STRING)
 }
 
-func addTimestampToBucket(b *bolt.Bucket, date_key string, seconds uint32) {
+func addTimestampToBucket(b *bolt.Bucket, date_key string, seconds seconds) {
 	old_seconds := getSeconds(b, date_key)
 	setSeconds(b, date_key, old_seconds+seconds)
 }

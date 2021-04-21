@@ -23,27 +23,27 @@ func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondi
 	return b, nil
 }
 
-func recLogic(now, beg_ts, end_ts time.Time, timeout uint32) (time.Time, time.Time, uint32, bool) {
+func recLogic(now, beg_ts, end_ts time.Time, timeout seconds) (time.Time, time.Time, seconds, bool) {
 	time_elapsed := now.Sub(end_ts)
-	duration := uint32(0)
+	duration := seconds(0)
 	finish := false
 
 	if beg_ts.IsZero() || end_ts.IsZero() {
 		beg_ts = now
 	} else if time_elapsed.Seconds() > float64(timeout) {
-		duration = uint32(end_ts.Sub(beg_ts).Seconds()) + timeout
+		duration = seconds(end_ts.Sub(beg_ts).Seconds()) + timeout
 		finish = true
 		beg_ts = now
 	} else {
-		duration = uint32(now.Sub(beg_ts).Seconds())
+		duration = seconds(now.Sub(beg_ts).Seconds())
 	}
 
 	return beg_ts, now, duration, finish
 }
 
-func addSecondToMap(m map[string]uint32, key string, num uint32) {
+func addSecondToMap(m map[string]seconds, key string, num seconds) {
 	if num == 0 { return }
-	var base_val uint32
+	var base_val seconds
 	if v, ok := m[key]; ok { base_val = v }
 	m[key] = base_val + num
 	if m[key] > SECONDS_IN_DAY {
@@ -55,7 +55,7 @@ func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	return tx.Bucket([]byte(group))
 }
 
-func expandGroup(b *bolt.Bucket) (time.Time, time.Time, uint32, *bolt.Bucket) {
+func expandGroup(b *bolt.Bucket) (time.Time, time.Time, seconds, *bolt.Bucket) {
 	return getTimestamp(b, "beg"), getTimestamp(b, "end"), getSeconds(b, "out"), b.Bucket([]byte("rec"))
 }
 
@@ -72,8 +72,8 @@ func is_date_str_in_range(date, beg_date, end_date string) bool {
 		(end_date == "" || strings.Compare(end_date, date) >= 0)
 }
 
-func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]uint32 {
-	m := map[string]uint32{}
+func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]seconds {
+	m := map[string]seconds{}
 
 	gb := getGroupBucket(tx, group)
 	if gb == nil { return m }
