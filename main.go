@@ -1,10 +1,11 @@
 package main
 
-import "github.com/alanxoc3/ttrack/internal/date"
 import (
 	"fmt"
 	"time"
 
+	"github.com/alanxoc3/ttrack/internal/date"
+	"github.com/alanxoc3/ttrack/internal/seconds"
 	"github.com/spf13/cobra"
 )
 
@@ -34,10 +35,12 @@ func main() {
 		Use:   "rec <group> <timeout>",
 		Short: "record current time",
 		Run: func(cmd *cobra.Command, args []string) {
-    			dur, durerr := time.ParseDuration(args[1])
-    			if durerr != nil { panic(durerr) }
+			dur, durerr := time.ParseDuration(args[1])
+			if durerr != nil {
+				panic(durerr)
+			}
 
-			recFunc(args[0], seconds(dur.Milliseconds()/1000))
+			recFunc(args[0], seconds.CreateFromDuration(dur))
 		},
 		Args: cobra.ExactArgs(2),
 	}
@@ -49,7 +52,7 @@ func main() {
 		Use:   "cp <srcGroup> <dstGroup>",
 		Short: "copy/merge groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			cpFunc(args[0], args[1], beginDate.ToDate(), endDate.ToDate())
+			cpFunc(args[0], args[1], beginDate.ToDate(), endDate.ToDate())
 		},
 		Args: cobra.ExactArgs(2),
 	}
@@ -62,7 +65,7 @@ func main() {
 		Use:   "del <group>",
 		Short: "delete a group",
 		Run: func(cmd *cobra.Command, args []string) {
-    			delFunc(args[0])
+			delFunc(args[0])
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -74,7 +77,7 @@ func main() {
 		Use:   "list",
 		Short: "list groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			listFunc()
+			listFunc()
 		},
 		Args: cobra.ExactArgs(0),
 	}
@@ -85,7 +88,7 @@ func main() {
 		Use:   "view",
 		Short: "view dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			viewFunc(args[0], beginDate.ToDate(), endDate.ToDate())
+			viewFunc(args[0], beginDate.ToDate(), endDate.ToDate())
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -99,7 +102,7 @@ func main() {
 		Use:   "agg",
 		Short: "aggregate dates for range into single duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			aggFunc(args[0], beginDate.String(), endDate.String())
+			aggFunc(args[0], beginDate.String(), endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -113,14 +116,18 @@ func main() {
 		Use:   "set <group> <date> <duration>",
 		Short: "sets the duration for a group's date",
 		Run: func(cmd *cobra.Command, args []string) {
-    			g := args[0]
-    			ts, tserr := date.CreateFromString(args[1])
-    			if tserr != nil { panic(tserr) }
+			g := args[0]
+			ts, tserr := date.CreateFromString(args[1])
+			if tserr != nil {
+				panic(tserr)
+			}
 
-    			dur, durerr := time.ParseDuration(args[2])
-    			if durerr != nil { panic(durerr) }
+			dur, durerr := time.ParseDuration(args[2])
+			if durerr != nil {
+				panic(durerr)
+			}
 
-    			setFunc(g, *ts, seconds(dur.Milliseconds()/1000))
+			setFunc(g, *ts, seconds.Seconds(dur.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(3),
 	}

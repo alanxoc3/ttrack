@@ -1,15 +1,15 @@
 package main
 
-import "github.com/alanxoc3/ttrack/internal/date"
 import (
 	"fmt"
 	"sort"
 	"time"
 
+	"github.com/alanxoc3/ttrack/internal/date"
+	"github.com/alanxoc3/ttrack/internal/seconds"
+
 	bolt "go.etcd.io/bbolt"
 )
-
-type seconds uint32
 
 func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	updateCmd(func(tx *bolt.Tx) error {
@@ -35,7 +35,7 @@ func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	})
 }
 
-func setFunc(group string, timestamp date.Date, duration seconds) {
+func setFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
@@ -59,7 +59,7 @@ func setFunc(group string, timestamp date.Date, duration seconds) {
 }
 
 func aggFunc(group, beg_date, end_date string) {
-	var secs seconds // This limits the agg output to 136 years. Meh, I won't live that long.
+	var secs seconds.Seconds
 
 	viewCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, group, beg_date, end_date)
@@ -70,12 +70,12 @@ func aggFunc(group, beg_date, end_date string) {
 		return nil
 	})
 
-	fmt.Printf("%s\n", secondsToString(secs))
+	fmt.Printf("%s\n", secs.String())
 
 }
 
 func viewFunc(group string, beg_date, end_date date.Date) {
-	dateMap := map[string]seconds{}
+	dateMap := map[string]seconds.Seconds{}
 
 	viewCmd(func(tx *bolt.Tx) error {
 		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
@@ -89,7 +89,9 @@ func viewFunc(group string, beg_date, end_date date.Date) {
 
 	sort.Strings(dates)
 	for _, d := range dates {
-		fmt.Printf("%s %s\n", d, secondsToString(dateMap[d]))
+		if v, ok := dateMap[d]; ok {
+			fmt.Printf("%s %s\n", d, v.String())
+		}
 	}
 }
 
@@ -124,7 +126,7 @@ func delFunc(group string) {
 	})
 }
 
-func recFunc(group string, timeout_param seconds) {
+func recFunc(group string, timeout_param seconds.Seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {
