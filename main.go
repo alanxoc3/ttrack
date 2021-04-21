@@ -1,5 +1,6 @@
 package main
 
+import "github.com/alanxoc3/ttrack/internal/date"
 import (
 	"fmt"
 	"time"
@@ -15,8 +16,8 @@ func main() {
 		Short: "A time tracking program.",
 	}
 
-	beginDate := &date{}
-	endDate := &date{}
+	beginDate := &dateArg{}
+	endDate := &dateArg{}
 
 	//------ VERSION COMMAND
 	versionCmd := &cobra.Command{
@@ -48,7 +49,7 @@ func main() {
 		Use:   "cp <srcGroup> <dstGroup>",
 		Short: "copy/merge groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			cpFunc(args[0], args[1], beginDate.String(), endDate.String())
+    			cpFunc(args[0], args[1], beginDate.ToDate(), endDate.ToDate())
 		},
 		Args: cobra.ExactArgs(2),
 	}
@@ -84,7 +85,7 @@ func main() {
 		Use:   "view",
 		Short: "view dates with associated duration",
 		Run: func(cmd *cobra.Command, args []string) {
-    			viewFunc(args[0], beginDate.String(), endDate.String())
+    			viewFunc(args[0], beginDate.ToDate(), endDate.ToDate())
 		},
 		Args: cobra.ExactArgs(1),
 	}
@@ -113,13 +114,13 @@ func main() {
 		Short: "sets the duration for a group's date",
 		Run: func(cmd *cobra.Command, args []string) {
     			g := args[0]
-    			ts, tserr := dateStrToTimestamp(args[1])
+    			ts, tserr := date.CreateFromString(args[1])
     			if tserr != nil { panic(tserr) }
 
     			dur, durerr := time.ParseDuration(args[2])
     			if durerr != nil { panic(durerr) }
 
-    			setFunc(g, ts, (uint32)(dur.Milliseconds()/1000))
+    			setFunc(g, *ts, (uint32)(dur.Milliseconds()/1000))
 		},
 		Args: cobra.ExactArgs(3),
 	}

@@ -1,5 +1,6 @@
 package main
 
+import "github.com/alanxoc3/ttrack/internal/date"
 import (
 	"fmt"
 	"sort"
@@ -8,9 +9,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func cpFunc(srcGroup, dstGroup, beg_date, end_date string) {
+type seconds uint32
+
+func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	updateCmd(func(tx *bolt.Tx) error {
-		m := getDateMap(tx, srcGroup, beg_date, end_date)
+		m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
 		if len(m) == 0 {
 			return nil
 		}
@@ -32,7 +35,7 @@ func cpFunc(srcGroup, dstGroup, beg_date, end_date string) {
 	})
 }
 
-func setFunc(group string, timestamp time.Time, duration uint32) {
+func setFunc(group string, timestamp date.Date, duration uint32) {
 	updateCmd(func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
@@ -48,7 +51,7 @@ func setFunc(group string, timestamp time.Time, duration uint32) {
 			return err
 		}
 
-		date_key := formatTimestamp(timestamp)
+		date_key := timestamp.String()
 		setSeconds(rb, date_key, duration)
 
 		return nil
@@ -71,11 +74,11 @@ func aggFunc(group, beg_date, end_date string) {
 
 }
 
-func viewFunc(group, beg_date, end_date string) {
+func viewFunc(group string, beg_date, end_date date.Date) {
 	dateMap := map[string]uint32{}
 
 	viewCmd(func(tx *bolt.Tx) error {
-		dateMap = getDateMap(tx, group, beg_date, end_date)
+		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
 		return nil
 	})
 

@@ -3,31 +3,32 @@ package date
 import "time"
 import "fmt"
 
-type date struct {
+const DATE_FORMAT_STRING string = "2006-01-02"
+
+type Date struct {
 	year uint16
 	month uint8
 	day uint8
 }
-var DATE_FORMAT_STRING string = "2006-01-02"
 
-func CreateFromString(datestr string) (*date, error) {
+func CreateFromString(datestr string) (*Date, error) {
 	ts, err := time.Parse(DATE_FORMAT_STRING, datestr)
 	if err != nil { return nil, err }
-	return &date{uint16(ts.Year()), uint8(ts.Month()), uint8(ts.Day())}, nil
+	return CreateFromTime(ts), nil
 }
 
-func CreateFromTime(ts time.Time) *date {
-	return &date{uint16(ts.Year()), uint8(ts.Month()), uint8(ts.Day())}
+func CreateFromTime(ts time.Time) *Date {
+	return &Date{uint16(ts.Year()-1), uint8(ts.Month()-1), uint8(ts.Day()-1)}
 }
 
 func dateStrToTimestamp(datestr string) (time.Time, error) {
 	return time.Parse(DATE_FORMAT_STRING, datestr)
 }
 
-func (d *date) String() string {
-	return fmt.Sprintf("%04d-%02d-%02d", d.year, d.month, d.day)
+func (d *Date) String() string {
+	return fmt.Sprintf("%04d-%02d-%02d", d.year+1, d.month+1, d.day+1)
 }
 
-func (d *date) IsZero() bool {
-	d.year == 1 || d.year 
+func (d *Date) IsZero() bool {
+	return d.year == 0 && d.month == 0 && d.day == 0
 }

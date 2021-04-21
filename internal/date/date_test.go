@@ -24,4 +24,5 @@ func TestCreateFromTimeWithZeroTime(t *testing.T) {
 	d := date.CreateFromTime(time.Time{})
 	assert.NotNil(t, d)
 	assert.Equal(t, "0001-01-01", d.String())
+	assert.True(t, d.IsZero())
 }
