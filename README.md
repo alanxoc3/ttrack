@@ -52,11 +52,11 @@ ttrack tidy
   # Cleans the cache file.
   # Formats all '.tt' files.
   
-ttrack show [<group>]... --recursive
+ttrack list [<group>]... --recursive
   <group-1>
   <group-1>/<sub-group
 
-ttrack list <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
+ttrack view <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
   2021-01-01:10m
   2021-01-02:13s
   2021-01-03:30m
@@ -73,10 +73,6 @@ Bolt db format:
     "out": 1m 00s
     "beg": 2021-01-01T07:34:59Z
     "end": 2021-01-01T07:34:59Z
-    "rec": {
-      "2021-01-01": 10m 35s
-      "2021-01-02": 30m 35s
-    }
   }
 }
 ```

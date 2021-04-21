@@ -71,7 +71,7 @@ func aggFunc(group, beg_date, end_date string) {
 
 }
 
-func listFunc(group, beg_date, end_date string) {
+func viewFunc(group, beg_date, end_date string) {
 	dateMap := map[string]uint32{}
 
 	viewCmd(func(tx *bolt.Tx) error {
@@ -90,7 +90,7 @@ func listFunc(group, beg_date, end_date string) {
 	}
 }
 
-func groupsFunc() {
+func listFunc() {
 	groupList := []string{}
 	viewCmd(func(tx *bolt.Tx) error {
 		c := tx.Cursor()

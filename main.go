@@ -68,30 +68,30 @@ func main() {
 
 	app.AddCommand(delCmd)
 
-	//------ GROUPS COMMAND
-	groupsCmd := &cobra.Command{
-		Use:   "groups",
-		Short: "show groups",
-		Run: func(cmd *cobra.Command, args []string) {
-    			groupsFunc()
-		},
-		Args: cobra.ExactArgs(0),
-	}
-	app.AddCommand(groupsCmd)
-
 	//------ LIST COMMAND
 	listCmd := &cobra.Command{
 		Use:   "list",
-		Short: "list dates with associated duration",
+		Short: "list groups",
 		Run: func(cmd *cobra.Command, args []string) {
-    			listFunc(args[0], beginDate.String(), endDate.String())
+    			listFunc()
+		},
+		Args: cobra.ExactArgs(0),
+	}
+	app.AddCommand(listCmd)
+
+	//------ VIEW COMMAND
+	viewCmd := &cobra.Command{
+		Use:   "view",
+		Short: "view dates with associated duration",
+		Run: func(cmd *cobra.Command, args []string) {
+    			viewFunc(args[0], beginDate.String(), endDate.String())
 		},
 		Args: cobra.ExactArgs(1),
 	}
 
-	listCmd.Flags().VarPF(beginDate, "begin-date", "b", "only list dates after or equal to this")
-	listCmd.Flags().VarPF(endDate, "end-date", "e", "only list dates before or equal to this")
-	app.AddCommand(listCmd)
+	viewCmd.Flags().VarPF(beginDate, "begin-date", "b", "only view dates after or equal to this")
+	viewCmd.Flags().VarPF(endDate, "end-date", "e", "only view dates before or equal to this")
+	app.AddCommand(viewCmd)
 
 	//------ AGG COMMAND
 	aggCmd := &cobra.Command{
