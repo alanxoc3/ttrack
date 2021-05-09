@@ -36,7 +36,7 @@ ttrack help
 ttrack version
 ttrack tidy
 
-ttrack ls  [<group>...] --recursive --escape
+ttrack ls  [<group>...] --recursive --quote
 ttrack rec <group>... 10m30s
 ttrack set <group>... 2021-01-01:+20m30s
 
@@ -44,7 +44,7 @@ ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --re
 ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
 
 ttrack del <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
-ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive --by-day
+ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive --daily
 ```
 
 Bolt db format:

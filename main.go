@@ -17,8 +17,11 @@ func main() {
 		Short: "A time tracking program.",
 	}
 
-	beginDate := &dateArg{}
-	endDate := &dateArg{}
+	beginDate := dateArg{}
+	endDate := dateArg{}
+	recursive := false
+	daily := false
+	escape := false
 
 	//------ VERSION COMMAND
 	versionCmd := &cobra.Command{
@@ -47,6 +50,20 @@ func main() {
 
 	app.AddCommand(recCmd)
 
+	//------ MV COMMAND
+	mvCmd := &cobra.Command{
+		Use:   "cp <srcGroup> <dstGroup>",
+		Short: "copy/merge groups",
+		Run: func(cmd *cobra.Command, args []string) {
+			cpFunc(args[0], args[1], beginDate.ToDate(), endDate.ToDate())
+		},
+		Args: cobra.ExactArgs(2),
+	}
+	mvCmd.Flags().VarPF(&beginDate, "begin-date", "b", "only move/merge dates after or equal to this")
+	mvCmd.Flags().VarPF(&endDate,   "end-date",   "e", "only move/merge dates before or equal to this")
+	app.AddCommand(mvCmd)
+
+
 	//------ CP COMMAND
 	cpCmd := &cobra.Command{
 		Use:   "cp <srcGroup> <dstGroup>",
@@ -56,8 +73,8 @@ func main() {
 		},
 		Args: cobra.ExactArgs(2),
 	}
-	cpCmd.Flags().VarPF(beginDate, "begin-date", "b", "only copy dates after or equal to this")
-	cpCmd.Flags().VarPF(endDate, "end-date", "e", "only copy dates before or equal to this")
+	cpCmd.Flags().VarPF(&beginDate, "begin-date", "b", "only copy dates after or equal to this")
+	cpCmd.Flags().VarPF(&endDate,   "end-date",   "e", "only copy dates before or equal to this")
 	app.AddCommand(cpCmd)
 
 	//------ DEL COMMAND
@@ -69,18 +86,23 @@ func main() {
 		},
 		Args: cobra.ExactArgs(1),
 	}
+	delCmd.Flags()   .VarPF(&beginDate, "begin-date", "b", "only delete records after or equal to this")
+	delCmd.Flags()   .VarPF(&endDate,   "end-date",   "e", "only delete records before or equal to this")
+	delCmd.Flags().BoolVarP(&recursive, "recursive",  "r", false, "delete records in subgroups too")
 
 	app.AddCommand(delCmd)
 
 	//------ LIST COMMAND
 	listCmd := &cobra.Command{
-		Use:   "list",
+		Use:   "ls",
 		Short: "list groups",
 		Run: func(cmd *cobra.Command, args []string) {
 			listFunc()
 		},
 		Args: cobra.ExactArgs(0),
 	}
+	listCmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "list all subgroups too")
+	listCmd.Flags().BoolVarP(&escape, "quote", "q", false, "quote each group according to posix shell quoting rules")
 	app.AddCommand(listCmd)
 
 	//------ VIEW COMMAND
@@ -93,8 +115,8 @@ func main() {
 		Args: cobra.ExactArgs(1),
 	}
 
-	viewCmd.Flags().VarPF(beginDate, "begin-date", "b", "only view dates after or equal to this")
-	viewCmd.Flags().VarPF(endDate, "end-date", "e", "only view dates before or equal to this")
+	viewCmd.Flags().VarPF(&beginDate, "begin-date", "b", "only view dates after or equal to this")
+	viewCmd.Flags().VarPF(&endDate, "end-date", "e", "only view dates before or equal to this")
 	app.AddCommand(viewCmd)
 
 	//------ AGG COMMAND
@@ -107,8 +129,10 @@ func main() {
 		Args: cobra.ExactArgs(1),
 	}
 
-	aggCmd.Flags().VarPF(beginDate, "begin-date", "b", "only aggregate dates after or equal to this")
-	aggCmd.Flags().VarPF(endDate, "end-date", "e", "only aggregate dates before or equal to this")
+	aggCmd.Flags().VarPF   (&beginDate, "begin-date", "b", "only aggregate dates after or equal to this")
+	aggCmd.Flags().VarPF   (&endDate,   "end-date",   "e", "only aggregate dates before or equal to this")
+	aggCmd.Flags().BoolVarP(&recursive, "recursive",  "r", false, "aggregate includes all sub groups recursively")
+	aggCmd.Flags().BoolVarP(&daily,     "daily",      "d", false, "aggregate per day instead of all together")
 	app.AddCommand(aggCmd)
 
 	//------ SET COMMAND
