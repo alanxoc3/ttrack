@@ -30,40 +30,21 @@ Groups naming rules:
 
 Api idea:
 ```
-ttrack 
-ttrack --help
+ttrack [--help] [--version] <command>
+
 ttrack help
 ttrack version
-
-ttrack rec <group>... 10m30s
-  # Only sets the cache if possible. May update files too.
-
-ttrack set <group>... 2021-01-03:+20m30s
-ttrack set <group>... 2021-01-03:-30m
-ttrack set <group>... :-30m
-
-ttrack del <group>... --recursive
-  # Removes both from cache and filesystem.
-
-ttrack mv <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-03 --recursive
-ttrack cp <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-03 --recursive
-
 ttrack tidy
-  # Cleans the cache file.
-  # Formats all '.tt' files.
-  
-ttrack list [<group>]... --recursive
-  <group-1>
-  <group-1>/<sub-group
 
-ttrack view <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
-  2021-01-01:10m
-  2021-01-02:13s
-  2021-01-03:30m
-  2021-01-04:1h
+ttrack ls  [<group>...] --recursive --escape
+ttrack rec <group>... 10m30s
+ttrack set <group>... 2021-01-01:+20m30s
 
-ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-04 --recursive
-  1h40m13s
+ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
+ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
+
+ttrack del <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
+ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive --by-day
 ```
 
 Bolt db format:
@@ -75,6 +56,11 @@ Bolt db format:
     "end": 2021-01-01T07:34:59Z
   }
 }
+```
+
+File format:
+```
+2021-01-01 10m30s
 ```
 
 Group name restraints:
