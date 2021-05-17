@@ -47,7 +47,7 @@ func main() {
 
 	//------ LS COMMAND
 	listCmd := &cobra.Command{
-		Use:   "ls [group]...",
+		Use:   "ls [<group>]...",
 		Short: "list groups",
 		Run: func(cmd *cobra.Command, args []string) {
 			listFunc()
@@ -60,7 +60,7 @@ func main() {
 
 	//------ REC COMMAND
 	recCmd := &cobra.Command{
-		Use:   "rec group... <duration>",
+		Use:   "rec <group> <duration>",
 		Short: "record current time",
 		Run: func(cmd *cobra.Command, args []string) {
 			dur, durerr := time.ParseDuration(args[1])
@@ -77,7 +77,7 @@ func main() {
 
 	//------ SET COMMAND
 	setCmd := &cobra.Command{
-		Use:   "set group... <date>:[+|-]<duration>",
+		Use:   "set <group> <date> <duration>",
 		Short: "sets the duration for a group's date",
 		Run: func(cmd *cobra.Command, args []string) {
 			g := args[0]
@@ -93,9 +93,53 @@ func main() {
 
 			setFunc(g, *ts, seconds.Seconds(dur.Milliseconds()/1000))
 		},
-		Args: cobra.MinimumNArgs(2),
+		Args: cobra.ExactArgs(3),
 	}
 	app.AddCommand(setCmd)
+
+	//------ ADD COMMAND
+	addCmd := &cobra.Command{
+		Use:   "add <group> <date> <duration>",
+		Short: "adds the duration for a group's date",
+		Run: func(cmd *cobra.Command, args []string) {
+			g := args[0]
+			ts, tserr := date.CreateFromString(args[1])
+			if tserr != nil {
+				panic(tserr)
+			}
+
+			dur, durerr := time.ParseDuration(args[2])
+			if durerr != nil {
+				panic(durerr)
+			}
+
+			setFunc(g, *ts, seconds.Seconds(dur.Milliseconds()/1000))
+		},
+		Args: cobra.ExactArgs(3),
+	}
+	app.AddCommand(addCmd)
+
+	//------ SUB COMMAND
+	subCmd := &cobra.Command{
+		Use:   "sub <group> <date> <duration>",
+		Short: "subtracts the duration for a group's date",
+		Run: func(cmd *cobra.Command, args []string) {
+			g := args[0]
+			ts, tserr := date.CreateFromString(args[1])
+			if tserr != nil {
+				panic(tserr)
+			}
+
+			dur, durerr := time.ParseDuration(args[2])
+			if durerr != nil {
+				panic(durerr)
+			}
+
+			setFunc(g, *ts, seconds.Seconds(dur.Milliseconds()/1000))
+		},
+		Args: cobra.ExactArgs(3),
+	}
+	app.AddCommand(subCmd)
 
 	//------ MV COMMAND
 	mvCmd := &cobra.Command{
@@ -113,7 +157,7 @@ func main() {
 
 	//------ CP COMMAND
 	cpCmd := &cobra.Command{
-		Use:   "cp <src-group>... <dst-group>",
+		Use:   "cp <source-group>... <destination-group>",
 		Short: "copy/merge groups",
 		Run: func(cmd *cobra.Command, args []string) {
 			cpFunc(args[0], args[1], beginDate.ToDate(), endDate.ToDate())
@@ -124,24 +168,24 @@ func main() {
 	cpCmd.Flags().VarPF(&endDate,   "end-date",   "e", "only copy dates before or equal to this")
 	app.AddCommand(cpCmd)
 
-	//------ DEL COMMAND
-	delCmd := &cobra.Command{
-		Use:   "del <group>...",
-		Short: "delete a group",
+	//------ RM COMMAND
+	rmCmd := &cobra.Command{
+		Use:   "rm <group>...",
+		Short: "remove a group",
 		Run: func(cmd *cobra.Command, args []string) {
 			delFunc(args[0])
 		},
 		Args: cobra.MinimumNArgs(1),
 	}
-	delCmd.Flags()   .VarPF(&beginDate, "begin-date", "b", "only delete records after or equal to this")
-	delCmd.Flags()   .VarPF(&endDate,   "end-date",   "e", "only delete records before or equal to this")
-	delCmd.Flags().BoolVarP(&recursive, "recursive",  "r", false, "delete records in subgroups too")
+	rmCmd.Flags()   .VarPF(&beginDate, "begin-date", "b", "only delete records after or equal to this")
+	rmCmd.Flags()   .VarPF(&endDate,   "end-date",   "e", "only delete records before or equal to this")
+	rmCmd.Flags().BoolVarP(&recursive, "recursive",  "r", false, "delete records in subgroups too")
 
-	app.AddCommand(delCmd)
+	app.AddCommand(rmCmd)
 
 	//------ AGG COMMAND
 	aggCmd := &cobra.Command{
-		Use:   "agg [<group>...]",
+		Use:   "agg <group>...",
 		Short: "aggregate dates for range into single duration",
 		Run: func(cmd *cobra.Command, args []string) {
 			aggFunc(args[0], beginDate.String(), endDate.String())

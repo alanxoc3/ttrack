@@ -36,16 +36,22 @@ ttrack help
 ttrack version
 ttrack tidy
 
-ttrack ls  [<group>...] --recursive --quote
-ttrack rec <group>... 10m30s
-ttrack set <group>... 2021-01-01:+20m30s
+ttrack ls [<group>...] --recursive --quote
+
+ttrack rec <group> 1h10m30s
+ttrack set <group> 2021-01-01 20m30s
+ttrack add <group> 2021-01-01 20m30s
+ttrack sub <group> 2021-01-01 20m30s
 
 ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
 ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
-
-ttrack del <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
+ttrack rm  <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
 ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive --daily
 ```
+
+What about timers? Two types of timers:
+- Wait until you hit a certain amount of time, then quit. So really like a wait/watch command.
+- Set a timer and update the db/storage with the amount of time in that timer. If you ctrl-c out of it, it will do some of the timer.
 
 Bolt db format:
 ```
@@ -62,6 +68,3 @@ File format:
 ```
 2021-01-01 10m30s
 ```
-
-Group name restraints:
-- No space character allowed in group names.
