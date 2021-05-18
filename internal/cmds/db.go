@@ -1,8 +1,9 @@
-package main
+package cmds
 
 import (
 	"encoding/binary"
 	"os"
+	"os/user"
 	"path/filepath"
 	"time"
 
@@ -10,6 +11,14 @@ import (
 
 	bolt "go.etcd.io/bbolt"
 )
+
+func getHomeFilePath(filename string) (string, error) {
+	if usr, err := user.Current(); err == nil {
+		return usr.HomeDir + "/.local/share/ttrack/" + filename, nil
+	} else {
+		return "", err
+	}
+}
 
 var DATE_FORMAT_STRING string = "2006-01-02"
 

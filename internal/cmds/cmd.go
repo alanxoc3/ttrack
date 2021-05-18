@@ -1,4 +1,4 @@
-package main
+package cmds
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
+func CpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	updateCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
 		if len(m) == 0 {
@@ -35,7 +35,7 @@ func cpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	})
 }
 
-func setFunc(group string, timestamp date.Date, duration seconds.Seconds) {
+func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
@@ -58,7 +58,7 @@ func setFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 	})
 }
 
-func aggFunc(group, beg_date, end_date string) {
+func AggFunc(group, beg_date, end_date string) {
 	var secs seconds.Seconds
 
 	viewCmd(func(tx *bolt.Tx) error {
@@ -74,7 +74,7 @@ func aggFunc(group, beg_date, end_date string) {
 
 }
 
-func viewFunc(group string, beg_date, end_date date.Date) {
+func ViewFunc(group string, beg_date, end_date date.Date) {
 	dateMap := map[string]seconds.Seconds{}
 
 	viewCmd(func(tx *bolt.Tx) error {
@@ -95,7 +95,7 @@ func viewFunc(group string, beg_date, end_date date.Date) {
 	}
 }
 
-func listFunc() {
+func ListFunc() {
 	groupList := []string{}
 	viewCmd(func(tx *bolt.Tx) error {
 		c := tx.Cursor()
@@ -114,7 +114,7 @@ func listFunc() {
 
 }
 
-func delFunc(group string) {
+func DelFunc(group string) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(group))
 		if b == nil {
@@ -126,7 +126,7 @@ func delFunc(group string) {
 	})
 }
 
-func recFunc(group string, timeout_param seconds.Seconds) {
+func RecFunc(group string, timeout_param seconds.Seconds) {
 	updateCmd(func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {

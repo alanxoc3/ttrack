@@ -1,19 +1,10 @@
-package main
+package cmds
 
 import (
-	"os/user"
 	"strings"
 
 	bolt "go.etcd.io/bbolt"
 )
-
-func getHomeFilePath(filename string) (string, error) {
-	if usr, err := user.Current(); err == nil {
-		return usr.HomeDir + "/.local/share/ttrack/" + filename, nil
-	} else {
-		return "", err
-	}
-}
 
 func viewCmd(f func(*bolt.Tx) error) {
 	db, err := opendb()

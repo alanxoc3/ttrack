@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"time"
+	"os"
+	"os/user"
 
 	"github.com/alanxoc3/ttrack/internal/date"
+	"github.com/alanxoc3/ttrack/internal/cmds"
 	"github.com/alanxoc3/ttrack/internal/seconds"
 	"github.com/spf13/cobra"
 )
@@ -12,6 +15,8 @@ import (
 var version string = "snapshot"
 
 type state struct {
+    cacheDir string
+    dataDir string
 	beginDate dateArg
 	endDate dateArg
 	recursive bool
@@ -72,6 +77,18 @@ func setStateMaxArg(argCount int, pfargs []string) {
 	fmt.Println("ttrack " + version)
 }
 
+func getEnvDir(appVar, xdgVar, homeFallback string) string {
+	if val, present := os.LookupEnv(appVar); present {
+		return val
+	} else if val, present := os.LookupEnv(xdgVar); present {
+		return val
+	} else if usr, err := user.Current(); err == nil {
+		return usr.HomeDir + homeFallback
+	} else {
+		return ""
+	}
+}
+
 func setCmdMeta(app, cmd *cobra.Command, argCount int, exact bool, use, short string) {
     if exact {
         cmd.Args = cobra.ExactArgs(argCount)
@@ -86,20 +103,23 @@ func setCmdMeta(app, cmd *cobra.Command, argCount int, exact bool, use, short st
 
 func main() {
     s := state{}
+    s.dataDir  = getEnvDir("TTRACK_DATA_DIR" , "XDG_DATA_HOME" , "/.local/share/ttrack")
+    s.cacheDir = getEnvDir("TTRACK_CACHE_DIR", "XDG_CACHE_HOME", "/.cache/ttrack")
+
 	app := &cobra.Command{
         Use: "ttrack [command]",
     	Short: "A time tracking program.",
 	}
 
-	addCmd     := createCmd(&s, parseSetArgs, func(s *state) { setFunc(s.groups[0], s.date, s.duration) })
-	aggCmd     := createCmd(&s, parseGroups,  func(s *state) { aggFunc(s.groups[0], s.beginDate.String(), s.endDate.String()) })
-	cpCmd      := createCmd(&s, parseGroups,  func(s *state) { cpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
-	listCmd    := createCmd(&s, parseNothing, func(s *state) { listFunc() })
-	mvCmd      := createCmd(&s, parseGroups,  func(s *state) { cpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
-	recCmd     := createCmd(&s, parseRecArgs, func(s *state) { recFunc(s.groups[0], s.duration) })
-	rmCmd      := createCmd(&s, parseGroups,  func(s *state) { delFunc(s.groups[0]) })
-	setCmd     := createCmd(&s, parseSetArgs, func(s *state) { setFunc(s.groups[0], s.date, s.duration) })
-	subCmd     := createCmd(&s, parseSetArgs, func(s *state) { setFunc(s.groups[0], s.date, s.duration) })
+	addCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
+	aggCmd     := createCmd(&s, parseGroups,  func(s *state) { cmds.AggFunc(s.groups[0], s.beginDate.String(), s.endDate.String()) })
+	cpCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.CpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
+	listCmd    := createCmd(&s, parseNothing, func(s *state) { cmds.ListFunc() })
+	mvCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.CpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
+	recCmd     := createCmd(&s, parseRecArgs, func(s *state) { cmds.RecFunc(s.groups[0], s.duration) })
+	rmCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.DelFunc(s.groups[0]) })
+	setCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
+	subCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
 	tidyCmd    := createCmd(&s, parseNothing, func(s *state) { fmt.Println("tidying") })
 	versionCmd := createCmd(&s, parseNothing, func(s *state) { fmt.Println("ttrack " + version) })
 
