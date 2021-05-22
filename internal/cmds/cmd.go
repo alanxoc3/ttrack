@@ -1,5 +1,6 @@
 package cmds
 
+import "github.com/alanxoc3/ttrack/internal/ttdb"
 import (
 	"fmt"
 	"sort"
@@ -12,7 +13,7 @@ import (
 )
 
 func CpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
-	updateCmd(func(tx *bolt.Tx) error {
+	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
 		if len(m) == 0 {
 			return nil
@@ -29,14 +30,14 @@ func CpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 		}
 
 		for k, v := range m {
-			addTimestampToBucket(rec, k, v)
+			ttdb.AddTimestampToBucket(rec, k, v)
 		}
 		return nil
 	})
 }
 
 func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
-	updateCmd(func(tx *bolt.Tx) error {
+	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
 		}
@@ -52,7 +53,7 @@ func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 		}
 
 		date_key := timestamp.String()
-		setSeconds(rb, date_key, duration)
+		ttdb.SetSeconds(rb, date_key, duration)
 
 		return nil
 	})
@@ -61,7 +62,7 @@ func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 func AggFunc(group, beg_date, end_date string) {
 	var secs seconds.Seconds
 
-	viewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(func(tx *bolt.Tx) error {
 		m := getDateMap(tx, group, beg_date, end_date)
 		for _, v := range m {
 			secs += v
@@ -77,7 +78,7 @@ func AggFunc(group, beg_date, end_date string) {
 func ViewFunc(group string, beg_date, end_date date.Date) {
 	dateMap := map[string]seconds.Seconds{}
 
-	viewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(func(tx *bolt.Tx) error {
 		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
 		return nil
 	})
@@ -97,7 +98,7 @@ func ViewFunc(group string, beg_date, end_date date.Date) {
 
 func ListFunc() {
 	groupList := []string{}
-	viewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(func(tx *bolt.Tx) error {
 		c := tx.Cursor()
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
@@ -115,7 +116,7 @@ func ListFunc() {
 }
 
 func DelFunc(group string) {
-	updateCmd(func(tx *bolt.Tx) error {
+	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(group))
 		if b == nil {
 			return nil
@@ -127,7 +128,7 @@ func DelFunc(group string) {
 }
 
 func RecFunc(group string, timeout_param seconds.Seconds) {
-	updateCmd(func(tx *bolt.Tx) error {
+	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {
 			return err
@@ -142,16 +143,16 @@ func RecFunc(group string, timeout_param seconds.Seconds) {
 				return err
 			}
 
-			addTimestampToBucket(rb, formatTimestamp(old_beg_ts), duration)
+			ttdb.AddTimestampToBucket(rb, formatTimestamp(old_beg_ts), duration)
 		}
 
 		if !old_beg_ts.Equal(beg_ts) {
-			setTimestamp(b, "beg", beg_ts)
+			ttdb.SetTimestamp(b, "beg", beg_ts)
 		}
-		setTimestamp(b, "end", end_ts)
+		ttdb.SetTimestamp(b, "end", end_ts)
 
 		if timeout_param > 0 {
-			setSeconds(b, "out", timeout_param)
+			ttdb.SetSeconds(b, "out", timeout_param)
 		}
 
 		return nil

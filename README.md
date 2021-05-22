@@ -1,4 +1,7 @@
 # ttrack
+
+[![Coverage Status](https://coveralls.io/repos/github/alanxoc3/ttrack/badge.svg?branch=main)](https://coveralls.io/github/alanxoc3/ttrack?branch=main)
+
 A cli based app meant to record how long you do things on a daily basis.
 
 TODO: Explain how this compares to other time tracking programs:

@@ -1,6 +1,7 @@
 package cmds
 
 import "github.com/alanxoc3/ttrack/internal/seconds"
+import "github.com/alanxoc3/ttrack/internal/ttdb"
 import (
 	"strings"
 	"time"
@@ -57,7 +58,7 @@ func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 }
 
 func expandGroup(b *bolt.Bucket) (time.Time, time.Time, seconds.Seconds, *bolt.Bucket) {
-	return getTimestamp(b, "beg"), getTimestamp(b, "end"), getSeconds(b, "out"), b.Bucket([]byte("rec"))
+	return ttdb.GetTimestamp(b, "beg"), ttdb.GetTimestamp(b, "end"), ttdb.GetSeconds(b, "out"), b.Bucket([]byte("rec"))
 }
 
 func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
