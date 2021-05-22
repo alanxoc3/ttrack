@@ -1,6 +1,6 @@
 # ttrack
 
-[![Build Status](https://travis-ci.org/alanxoc3/ttrack.svg?branch=master)](https://travis-ci.org/alanxoc3/ttrack)
+[![Build Status](https://travis-ci.com/alanxoc3/ttrack.svg?branch=main)](https://travis-ci.com/alanxoc3/ttrack)
 [![Go Report Card](https://goreportcard.com/badge/github.com/alanxoc3/ttrack)](https://goreportcard.com/report/github.com/alanxoc3/ttrack)
 [![Coverage Status](https://coveralls.io/repos/github/alanxoc3/ttrack/badge.svg?branch=main)](https://coveralls.io/github/alanxoc3/ttrack?branch=main)
 
