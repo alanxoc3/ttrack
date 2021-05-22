@@ -4,14 +4,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/alanxoc3/ttrack)](https://goreportcard.com/report/github.com/alanxoc3/ttrack)
 [![Coverage Status](https://coveralls.io/repos/github/alanxoc3/ttrack/badge.svg?branch=main)](https://coveralls.io/github/alanxoc3/ttrack?branch=main)
 
-A cli based app meant to record how long you do things on a daily basis.
+A cli based app that helps you record how long you do things on a daily basis. This app is different from other time tracking programs in that it satisfies these requirements:
+- CLI based for scripting.
+- Focused on daily time tracking.
+- Lightweight, fast, and no daemon.
+- No need to worry about stopping your time.
+- Store data in text files for version control.
 
-TODO: Explain how this compares to other time tracking programs:
-- [Watson](https://tailordev.github.io/Watson/)
-- [Gtm](https://github.com/laughedelic/gtm)
-- [ActivityWatch](https://github.com/ActivityWatch/activitywatch)
-- [WakaTime](https://wakatime.com/)
-- [SelfSpy](https://github.com/selfspy/selfspy)
+
 
 ## Integrations
 ### Kakoune
@@ -58,6 +58,11 @@ What about timers? Two types of timers:
 - Wait until you hit a certain amount of time, then quit. So really like a wait/watch command.
 - Set a timer and update the db/storage with the amount of time in that timer. If you ctrl-c out of it, it will do some of the timer.
 
+
+## Internal Details
+Ttrack uses [BoltDb](https://github.com/etcd-io/bbolt) as cache. The "rec" command stores time tracking information in this file until the timeout has been reached. At that pointa
+
+stores time tracking instores timestamp upUpdates are stored in this file until the timeout has been reached.
 Bolt db format:
 ```
 {
@@ -66,10 +71,18 @@ Bolt db format:
     "beg": 2021-01-01T07:34:59Z
     "end": 2021-01-01T07:34:59Z
   }
-}
+}, ...
 ```
 
 File format:
 ```
 2021-01-01 10m30s
 ```
+
+## More Time Tracking Software
+If this program doesn't satisfy your needs, there are other options you may be interested in that have a different focus from concards:
+* [Watson](https://tailordev.github.io/Watson/): Records time by starting and stopping instead of continually updating.
+* [Gtm](https://github.com/laughedelic/gtm): Similar to watson, but meant for working in git.
+* [ActivityWatch](https://github.com/ActivityWatch/activitywatch): Heavier & more complex, but supports more features and granularity.
+* [WakaTime](https://wakatime.com/): Plugin oriented instead of cli based.
+* [SelfSpy](https://github.com/selfspy/selfspy): A daemon that records keystrokes and is X11 specific.
