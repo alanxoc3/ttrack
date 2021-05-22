@@ -17,8 +17,8 @@ var version string = "snapshot"
 type state struct {
     cacheDir string
     dataDir string
-	beginDate dateArg
-	endDate dateArg
+	beginDate date.Date
+	endDate date.Date
 	recursive bool
 	daily bool
 	quote bool

@@ -32,3 +32,15 @@ func (d *Date) String() string {
 func (d *Date) IsZero() bool {
 	return d.year == 0 && d.month == 0 && d.day == 0
 }
+
+func (d *Date) Set(s string) error {
+	v, err := CreateFromString(s)
+	if err == nil { *d = Date(*v) }
+	return err
+}
+
+func (d *Date) Type() string { return "date" }
+
+func (d *Date) ToDate() Date {
+	return (Date)(*d)
+}
