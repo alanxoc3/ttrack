@@ -12,9 +12,7 @@ A cli based app that helps you record how long you do things on a daily basis. T
 * Store data in text files for version control.
 
 ## Install
-Download the latest release from the [release
-page](https://github.com/alanxoc3/concards/releases). At the moment, only Linux
-and Mac are supported.
+Download the latest release from the [release page](https://github.com/alanxoc3/concards/releases). At the moment, only Linux and Mac builds are supported.
 
 If you have golang, you can install the latest updates from source. Keep in mind that the `main` branch is not guaranteed to be stable.
 ```bash
@@ -24,7 +22,7 @@ go install github.com/alanxoc3/concards
 ## Usage
 Some time tracking utilities require you to manually start your time before you begin a task and end your time after you finish. This is unfortunately error prone, because it's all too common to forget to start or end your time. Ttrack instead primarily works by inserting records and specifying a timeout with your record. If ttrack is called again before the duration of the timeout has been reached, then the time is extended. Otherwise, your time is added to your daily total in a text file.
 
-A common use case of ttrack is to automate calling every time you interact with a program. As an example, you may want to call ttrack every time you input a key in your text editor to see how much time you spend editing files. You could put this command into a hook that gets run on key press:
+A common use case is to execute ttrack every time you interact with a program, through that program's hooks. As an example, you may want to call ttrack every time you input a key in your text editor to see how much time you spend editing files. You could put this command into a hook that gets run on key press:
 
 ```bash
 ttrack rec text-editor 5s
@@ -69,8 +67,7 @@ ttrack rec concards 30s
 ```
 
 ## Internal Details
-Ttrack uses [BoltDb](https://github.com/etcd-io/bbolt) as cache. The "rec" command stores time tracking information in this file until the timeout has been reached, then the timestamp is added to a text file based on your group name.
-The format of the bolt db file looks similar to, not taking serialization/marshaling into account:
+Ttrack uses [BoltDb](https://github.com/etcd-io/bbolt) for its cache. The "rec" command stores time tracking information in this file until the timeout has been reached, then the timestamp is added to a text file based on your group name. The format of the bolt db file looks similar to this, abstracting out serialization:
 ```
 {
   "<group-name>": {
@@ -92,17 +89,17 @@ The text file format is also very simple. Here is an example of what it might lo
 
 ## Comparison Similar Apps
 Here are some other time tracking applications and how ttrack relates to them:
-* [Watson](https://tailordev.github.io/Watson/): Records time by starting and stopping instead of continually updating.
-* [Gtm](https://github.com/laughedelic/gtm): Similar to watson, but meant for working in git.
-* [ActivityWatch](https://github.com/ActivityWatch/activitywatch): Heavier & more complex, but supports more features and granularity.
-* [WakaTime](https://wakatime.com/): Plugin oriented instead of cli based.
+* [ActivityWatch](https://github.com/ActivityWatch/activitywatch): Daemon-centric, but supports more features and granularity.
+* [Watson](https://tailordev.github.io/Watson/): Records time by starting and stopping instead of using timeouts.
 * [SelfSpy](https://github.com/selfspy/selfspy): A daemon that records keystrokes and is X11 specific.
+* [WakaTime](https://wakatime.com/): Proprietary & plugin oriented instead of cli based.
+* [Gtm](https://github.com/laughedelic/gtm): Similar to watson, but meant for working in git.
 
 ## Dependencies
 Ttrack has very few dependencies outside of go's standard library. Here are all the direct dependencies:
 * [Cobra](https://github.com/spf13/cobra) for CLI arguments.
 * [Testify](https://github.com/stretchr/testify) for unit tests.
-* [BoltDb](https://github.com/etcd-io/bbolt) for implementing a cache.
+* [BoltDb](https://github.com/etcd-io/bbolt) for the cache implementation.
 
 ## Development Notes
 This project is still very much in alpha. Below is my thought process and planning for ttrack. This section will go away soon.
