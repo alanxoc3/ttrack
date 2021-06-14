@@ -29,14 +29,14 @@ func TestSetGetSeconds(t *testing.T) {
 	execTest(t, func(dir string) {
         secs := seconds.CreateFromDuration(time.Duration(0))
 		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
-            bucket, err := b.CreateBucket([]byte("apple"))
-			ttdb.SetSeconds(bucket, "apple", seconds.CreateFromDuration(time.Hour))
+            bucket, err := b.CreateBucket([]byte("group"))
+			ttdb.SetSeconds(bucket, "key", seconds.CreateFromDuration(time.Hour))
 			return err
 		})
 
 		ttdb.ViewCmd(dir, func(b *bolt.Tx) error {
-            bucket := b.Bucket([]byte("apple"))
-			secs = ttdb.GetSeconds(bucket, "apple")
+            bucket := b.Bucket([]byte("group"))
+			secs = ttdb.GetSeconds(bucket, "key")
 			return nil
 		})
 
