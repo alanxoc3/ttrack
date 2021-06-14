@@ -21,8 +21,8 @@ func getHomeFilePath(filename string) (string, error) {
 	}
 }
 
-func open(cacheDir string) (*bolt.DB, error) {
-	dbpath := path.Join(cacheDir, "db")
+func open(dir string) (*bolt.DB, error) {
+	dbpath := path.Join(dir, "db")
 
 	err := os.MkdirAll(filepath.Dir(dbpath), 0755)
 	if err != nil {
