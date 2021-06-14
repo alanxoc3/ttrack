@@ -14,37 +14,24 @@ import (
 
 var version string = "snapshot"
 
-type state struct {
-    cacheDir string
-    dataDir string
-	beginDate date.Date
-	endDate date.Date
-	recursive bool
-	daily bool
-	quote bool
-	groups []string
-	date date.Date
-	duration seconds.Seconds
-}
-
-type parseFunc func([]string, *state)
+type parseFunc func([]string, *cmds.State)
 type cobraFunc func(*cobra.Command, []string)
-type execFunc func(*state)
+type execFunc func(*cmds.State)
 
-func parseRecArgs(args []string, s *state) {
+func parseRecArgs(args []string, s *cmds.State) {
 	dur, durerr := time.ParseDuration(args[1])
 	if durerr != nil {
 		panic(durerr)
 	}
-	s.groups = []string{args[0]}
-	s.duration = seconds.CreateFromDuration(dur)
+	s.Groups = []string{args[0]}
+	s.Duration = seconds.CreateFromDuration(dur)
 }
 
-func parseGroups(args []string, s *state) {
-    s.groups = args
+func parseGroups(args []string, s *cmds.State) {
+    s.Groups = args
 }
 
-func parseSetArgs(args []string, s *state) {
+func parseSetArgs(args []string, s *cmds.State) {
 	ts, tserr := date.CreateFromString(args[1])
 	if tserr != nil {
 		panic(tserr)
@@ -55,16 +42,16 @@ func parseSetArgs(args []string, s *state) {
 		panic(durerr)
 	}
 
-    s.duration = seconds.CreateFromDuration(dur)
-    s.groups = []string{args[0]}
-    s.date = *ts
+    s.Duration = seconds.CreateFromDuration(dur)
+    s.Groups = []string{args[0]}
+    s.Date = *ts
 }
 
-func parseNothing(args []string, s *state) {
+func parseNothing(args []string, s *cmds.State) {
     return
 }
 
-func createCmd(s *state, pf parseFunc, ef execFunc) *cobra.Command {
+func createCmd(s *cmds.State, pf parseFunc, ef execFunc) *cobra.Command {
 	return &cobra.Command{
         Run: func(cmd *cobra.Command, args []string) {
             pf(args, s)
@@ -102,39 +89,40 @@ func setCmdMeta(app, cmd *cobra.Command, argCount int, exact bool, use, short st
 }
 
 func main() {
-    s := state{}
-    s.dataDir  = getEnvDir("TTRACK_DATA_DIR" , "XDG_DATA_HOME" , "/.local/share/ttrack")
-    s.cacheDir = getEnvDir("TTRACK_CACHE_DIR", "XDG_CACHE_HOME", "/.cache/ttrack")
+    s := cmds.State{}
+    s.Now = time.Now()
+    s.DataDir  = getEnvDir("TTRACK_DATA_DIR" , "XDG_DATA_HOME" , "/.local/share/ttrack")
+    s.CacheDir = getEnvDir("TTRACK_CACHE_DIR", "XDG_CACHE_HOME", "/.cache/ttrack")
 
 	app := &cobra.Command{
         Use: "ttrack [command]",
     	Short: "A time tracking program.",
 	}
 
-	addCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
-	aggCmd     := createCmd(&s, parseGroups,  func(s *state) { cmds.AggFunc(s.groups[0], s.beginDate.String(), s.endDate.String()) })
-	cpCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.CpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
-	listCmd    := createCmd(&s, parseNothing, func(s *state) { cmds.ListFunc() })
-	mvCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.CpFunc(s.groups[0], s.groups[1], s.beginDate.ToDate(), s.endDate.ToDate()) })
-	recCmd     := createCmd(&s, parseRecArgs, func(s *state) { cmds.RecFunc(s.groups[0], s.duration) })
-	rmCmd      := createCmd(&s, parseGroups,  func(s *state) { cmds.DelFunc(s.groups[0]) })
-	setCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
-	subCmd     := createCmd(&s, parseSetArgs, func(s *state) { cmds.SetFunc(s.groups[0], s.date, s.duration) })
-	tidyCmd    := createCmd(&s, parseNothing, func(s *state) { fmt.Println("tidying") })
-	versionCmd := createCmd(&s, parseNothing, func(s *state) { fmt.Println("ttrack " + version) })
+	addCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
+	aggCmd     := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	listCmd    := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("in implementation") })
+	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	recCmd     := createCmd(&s, parseRecArgs, cmds.RecFunc)
+	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	setCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
+	subCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
+	tidyCmd    := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("tidying") })
+	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("ttrack " + version) })
 
-	aggCmd .Flags().BoolVarP(&s.daily,     "daily",      "d", false, "aggregate per day instead of all together")
-	aggCmd .Flags().BoolVarP(&s.recursive, "recursive",  "r", false, "aggregate includes all sub groups recursively")
-	aggCmd .Flags().VarPF   (&s.beginDate, "begin-date", "b",        "only aggregate dates after or equal to this")
-	aggCmd .Flags().VarPF   (&s.endDate,   "end-date",   "e",        "only aggregate dates before or equal to this")
-	cpCmd  .Flags().VarPF   (&s.beginDate, "begin-date", "b",        "only copy dates after or equal to this")
-	cpCmd  .Flags().VarPF   (&s.endDate,   "end-date",   "e",        "only copy dates before or equal to this")
-	listCmd.Flags().BoolVarP(&s.quote,     "quote",      "q", false, "quote each group according to posix shell quoting rules")
-	mvCmd  .Flags().VarPF   (&s.beginDate, "begin-date", "b",        "only move/merge dates after or equal to this")
-	mvCmd  .Flags().VarPF   (&s.endDate,   "end-date",   "e",        "only move/merge dates before or equal to this")
-	rmCmd  .Flags().BoolVarP(&s.recursive, "recursive",  "r", false, "delete records in subgroups too")
-	rmCmd  .Flags().VarPF   (&s.beginDate, "begin-date", "b",        "only delete records after or equal to this")
-	rmCmd  .Flags().VarPF   (&s.endDate,   "end-date",   "e",        "only delete records before or equal to this")
+	aggCmd .Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
+	aggCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "aggregate includes all sub groups recursively")
+	aggCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only aggregate dates after or equal to this")
+	aggCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only aggregate dates before or equal to this")
+	cpCmd  .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only copy dates after or equal to this")
+	cpCmd  .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only copy dates before or equal to this")
+	listCmd.Flags().BoolVarP(&s.Quote,     "quote",      "q", false, "quote each group according to posix shell quoting rules")
+	mvCmd  .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only move/merge dates after or equal to this")
+	mvCmd  .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only move/merge dates before or equal to this")
+	rmCmd  .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "delete records in subgroups too")
+	rmCmd  .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only delete records after or equal to this")
+	rmCmd  .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only delete records before or equal to this")
 
 	setCmdMeta(app, addCmd    , 3, true , "add <group> <date> <duration>", "adds the duration for a group's date")
 	setCmdMeta(app, aggCmd    , 1, true , "agg <group>..."               , "aggregate dates for range into single duration")

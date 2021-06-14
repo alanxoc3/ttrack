@@ -12,8 +12,27 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-func CpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
-	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
+type State struct {
+    CacheDir string
+    DataDir string
+	BeginDate date.Date
+	EndDate date.Date
+	Recursive bool
+	Daily bool
+	Quote bool
+	Groups []string
+	Date date.Date
+	Now time.Time
+	Duration seconds.Seconds
+}
+
+func CpFunc(s *State) {
+    srcGroup := s.Groups[0]
+    dstGroup := s.Groups[0]
+    beg_date := s.BeginDate.ToDate()
+    end_date := s.EndDate.ToDate()
+
+	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
 		if len(m) == 0 {
 			return nil
@@ -36,8 +55,12 @@ func CpFunc(srcGroup, dstGroup string, beg_date, end_date date.Date) {
 	})
 }
 
-func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
-	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
+func SetFunc(s *State) {
+    group := s.Groups[0]
+    timestamp := s.Date
+    duration := s.Duration
+
+	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
 			return fmt.Errorf("you can't set the zero date")
 		}
@@ -59,10 +82,13 @@ func SetFunc(group string, timestamp date.Date, duration seconds.Seconds) {
 	})
 }
 
-func AggFunc(group, beg_date, end_date string) {
+func AggFunc(s *State) {
+    group := s.Groups[0]
+    beg_date := s.BeginDate.String()
+    end_date := s.EndDate.String()
 	var secs seconds.Seconds
 
-	ttdb.ViewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		m := getDateMap(tx, group, beg_date, end_date)
 		for _, v := range m {
 			secs += v
@@ -75,10 +101,14 @@ func AggFunc(group, beg_date, end_date string) {
 
 }
 
-func ViewFunc(group string, beg_date, end_date date.Date) {
+func ViewFunc(s *State) {
+    group := s.Groups[0]
+    beg_date := s.BeginDate.ToDate()
+    end_date := s.EndDate.ToDate()
+
 	dateMap := map[string]seconds.Seconds{}
 
-	ttdb.ViewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
 		return nil
 	})
@@ -96,9 +126,9 @@ func ViewFunc(group string, beg_date, end_date date.Date) {
 	}
 }
 
-func ListFunc() {
+func ListFunc(s *State) {
 	groupList := []string{}
-	ttdb.ViewCmd(func(tx *bolt.Tx) error {
+	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		c := tx.Cursor()
 
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
@@ -115,8 +145,9 @@ func ListFunc() {
 
 }
 
-func DelFunc(group string) {
-	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
+func DelFunc(s *State) {
+    group := s.Groups[0]
+	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(group))
 		if b == nil {
 			return nil
@@ -127,15 +158,17 @@ func DelFunc(group string) {
 	})
 }
 
-func RecFunc(group string, timeout_param seconds.Seconds) {
-	ttdb.UpdateCmd(func(tx *bolt.Tx) error {
+func RecFunc(s *State) {
+    group := s.Groups[0]
+    timeout_param := s.Duration
+	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {
 			return err
 		}
 
 		old_beg_ts, old_end_ts, old_timeout, _ := expandGroup(b)
-		beg_ts, end_ts, duration, finish := recLogic(time.Now(), old_beg_ts, old_end_ts, old_timeout)
+		beg_ts, end_ts, duration, finish := recLogic(s.Now, old_beg_ts, old_end_ts, old_timeout)
 
 		if finish && duration > 0 {
 			rb, err := b.CreateBucketIfNotExists([]byte("rec"))
