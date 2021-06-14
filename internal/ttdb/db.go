@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"time"
+	"path"
 
 	"github.com/alanxoc3/ttrack/internal/seconds"
 
@@ -20,13 +21,10 @@ func getHomeFilePath(filename string) (string, error) {
 	}
 }
 
-func open() (*bolt.DB, error) {
-	dbpath, err := getHomeFilePath("db")
-	if err != nil {
-		return nil, err
-	}
+func open(cacheDir string) (*bolt.DB, error) {
+	dbpath := path.Join(cacheDir, "db")
 
-	err = os.MkdirAll(filepath.Dir(dbpath), 0755)
+	err := os.MkdirAll(filepath.Dir(dbpath), 0755)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +74,8 @@ func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs seconds.Seconds)
 	SetSeconds(b, date_key, old_seconds+secs)
 }
 
-func ViewCmd(f func(*bolt.Tx) error) {
-	db, err := open()
+func ViewCmd(cacheDir string, f func(*bolt.Tx) error) {
+	db, err := open(cacheDir)
 	if err != nil {
 		panic(err)
 	}
@@ -92,8 +90,8 @@ func ViewCmd(f func(*bolt.Tx) error) {
 	}
 }
 
-func UpdateCmd(f func(*bolt.Tx) error) {
-	db, err := open()
+func UpdateCmd(cacheDir string, f func(*bolt.Tx) error) {
+	db, err := open(cacheDir)
 	if err != nil {
 		panic(err)
 	}
