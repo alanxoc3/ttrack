@@ -3,6 +3,7 @@ package ttdb_test
 // Tests create bolt databases in temp directories, then clean those directories when the tests are finished.
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -27,15 +28,15 @@ func execTest(t *testing.T, testFunc func(string)) {
 
 func TestSetGetSeconds(t *testing.T) {
 	execTest(t, func(dir string) {
-        secs := seconds.CreateFromDuration(time.Duration(0))
+		secs := seconds.CreateFromDuration(time.Duration(0))
 		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
-            bucket, err := b.CreateBucket([]byte("group"))
+			bucket, err := b.CreateBucket([]byte("group"))
 			ttdb.SetSeconds(bucket, "key", seconds.CreateFromDuration(time.Hour))
 			return err
 		})
 
 		ttdb.ViewCmd(dir, func(b *bolt.Tx) error {
-            bucket := b.Bucket([]byte("group"))
+			bucket := b.Bucket([]byte("group"))
 			secs = ttdb.GetSeconds(bucket, "key")
 			return nil
 		})
@@ -44,10 +45,38 @@ func TestSetGetSeconds(t *testing.T) {
 	})
 }
 
-// func GetSeconds(b *bolt.Bucket, key string) seconds.Seconds
-// func SetSeconds(b *bolt.Bucket, key string, secs seconds.Seconds) {
-// func GetTimestamp(b *bolt.Bucket, key string) time.Time {
-// func SetTimestamp(b *bolt.Bucket, key string, t time.Time) {
-// func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs seconds.Seconds) {
-// func ViewCmd(cacheDir string, f func(*bolt.Tx) error) {
-// func UpdateCmd(cacheDir string, f func(*bolt.Tx) error) {
+func TestTimestamp(t *testing.T) {
+	var testVals = []struct {
+		expected string
+	}{
+		{"0001-01-01T00:00:00Z"},
+		{"2006-01-02T15:04:05Z"},
+		{"2021-12-31T23:59:59Z"},
+		{"1999-06-20T15:32:43Z"},
+	}
+	for _, v := range testVals {
+		t.Run(fmt.Sprintf("test-%s", v.expected), func(t *testing.T) {
+			expectedTime, err := time.Parse(time.RFC3339, v.expected)
+			if err != nil {
+				t.Fatalf("%s", err)
+			}
+
+			execTest(t, func(dir string) {
+				ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
+					bucket, err := b.CreateBucket([]byte("group"))
+					ttdb.SetTimestamp(bucket, "key", expectedTime)
+					return err
+				})
+
+				var actualTime time.Time
+				ttdb.ViewCmd(dir, func(b *bolt.Tx) error {
+					bucket := b.Bucket([]byte("group"))
+					actualTime = ttdb.GetTimestamp(bucket, "key")
+					return nil
+				})
+
+				assert.Equal(t, expectedTime, actualTime)
+			})
+		})
+	}
+}
