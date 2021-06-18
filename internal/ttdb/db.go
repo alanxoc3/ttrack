@@ -3,23 +3,14 @@ package ttdb
 import (
 	"encoding/binary"
 	"os"
-	"os/user"
+	"path"
 	"path/filepath"
 	"time"
-	"path"
 
 	"github.com/alanxoc3/ttrack/internal/seconds"
 
 	bolt "go.etcd.io/bbolt"
 )
-
-func getHomeFilePath(filename string) (string, error) {
-	if usr, err := user.Current(); err == nil {
-		return usr.HomeDir + "/.local/share/ttrack/" + filename, nil
-	} else {
-		return "", err
-	}
-}
 
 func open(dir string) (*bolt.DB, error) {
 	dbpath := path.Join(dir, "db")
@@ -105,4 +96,3 @@ func UpdateCmd(cacheDir string, f func(*bolt.Tx) error) {
 		panic(err)
 	}
 }
-
