@@ -26,23 +26,35 @@ func execTest(t *testing.T, testFunc func(string)) {
 	testFunc(dir)
 }
 
-func TestSetGetSeconds(t *testing.T) {
-	execTest(t, func(dir string) {
-		secs := seconds.CreateFromDuration(time.Duration(0))
-		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
-			bucket, err := b.CreateBucket([]byte("group"))
-			ttdb.SetSeconds(bucket, "key", seconds.CreateFromDuration(time.Hour))
-			return err
-		})
+func TestSeconds(t *testing.T) {
+	var testVals = []struct {
+		expected string
+		input string
+	}{
+		{"24h0m0s", "25h"},
+		{"0s", "0s"},
+	}
 
-		ttdb.ViewCmd(dir, func(b *bolt.Tx) error {
-			bucket := b.Bucket([]byte("group"))
-			secs = ttdb.GetSeconds(bucket, "key")
-			return nil
-		})
+	for _, v := range testVals {
+		t.Run(fmt.Sprintf("test-%s", v.input), func(t *testing.T) {
+        	execTest(t, func(dir string) {
+        		var secs seconds.Seconds
+        		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
+        			bucket, err := b.CreateBucket([]byte("group"))
+        			ttdb.SetSeconds(bucket, "key", seconds.CreateFromString(v.input))
+        			return err
+        		})
 
-		assert.Equal(t, seconds.CreateFromDuration(time.Hour), secs)
-	})
+        		ttdb.ViewCmd(dir, func(b *bolt.Tx) error {
+        			bucket := b.Bucket([]byte("group"))
+        			secs = ttdb.GetSeconds(bucket, "key")
+        			return nil
+        		})
+
+        		assert.Equal(t, v.expected, secs.String())
+        	})
+		})
+	}
 }
 
 func TestTimestamp(t *testing.T) {
