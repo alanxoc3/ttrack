@@ -1,7 +1,8 @@
-package ttdb_test
+package ttfile_test
 
 // Tests create bolt databases in temp directories, then clean those directories when the tests are finished.
 
+/*
 import (
 	"fmt"
 	"os"
@@ -96,3 +97,4 @@ func TestTimestamp(t *testing.T) {
 		})
 	}
 }
+*/

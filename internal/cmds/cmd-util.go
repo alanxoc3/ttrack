@@ -57,8 +57,8 @@ func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	return tx.Bucket([]byte(group))
 }
 
-func expandGroup(b *bolt.Bucket) (time.Time, time.Time, seconds.Seconds, *bolt.Bucket) {
-	return ttdb.GetTimestamp(b, "beg"), ttdb.GetTimestamp(b, "end"), ttdb.GetSeconds(b, "out"), b.Bucket([]byte("rec"))
+func expandGroup(b *bolt.Bucket) (time.Time, time.Time, seconds.Seconds) {
+	return ttdb.GetTimestamp(b, "beg"), ttdb.GetTimestamp(b, "end"), ttdb.GetSeconds(b, "out")
 }
 
 func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
@@ -74,13 +74,14 @@ func is_date_str_in_range(date, beg_date, end_date string) bool {
 		(end_date == "" || strings.Compare(end_date, date) >= 0)
 }
 
+/*
 func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]seconds.Seconds {
 	m := map[string]seconds.Seconds{}
 
 	gb := getGroupBucket(tx, group)
 	if gb == nil { return m }
 
-	beg_ts, end_ts, timeout, rec := expandGroup(gb)
+	beg_ts, end_ts, timeout, := expandGroup(gb)
 	_, _, duration, _ := recLogic(time.Now(), beg_ts, end_ts, timeout)
 	beg_ts_str := formatTimestamp(beg_ts)
 	if is_date_str_in_range(beg_ts_str, beg_bounds, end_bounds) {
@@ -100,3 +101,4 @@ func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]se
 
 	return m
 }
+*/
