@@ -18,21 +18,21 @@ func (dl dateList) Swap(i, j int) { dl[i], dl[j] = dl[j], dl[i] }
 
 type dateSeconds struct {
     Date types.Date
-    Seconds types.Seconds
+    DaySeconds types.DaySeconds
 }
 
-func insertOrAdd(dateToSeconds map[types.Date]types.Seconds, day types.Date, secs types.Seconds) {
-	if day.IsZero() || secs == 0 { return }
+func insertOrAdd(dateToSeconds map[types.Date]types.DaySeconds, day types.Date, secs types.DaySeconds) {
+	if day.IsZero() || secs.IsZero() { return }
 
 	if val, ok := dateToSeconds[day]; ok {
-		dateToSeconds[day] = (val + secs).CapAtOneDay()
+		dateToSeconds[day] = val.Add(secs)
 	} else {
-		dateToSeconds[day] = secs.CapAtOneDay()
+		dateToSeconds[day] = secs
 	}
 }
 
-func GetDateSeconds(filename string) map[types.Date]types.Seconds {
-	dateToSeconds := map[types.Date]types.Seconds{}
+func GetDateSeconds(filename string) map[types.Date]types.DaySeconds {
+	dateToSeconds := map[types.Date]types.DaySeconds{}
 
 	if f, err := os.Open(filename); err == nil {
 		scanner := bufio.NewScanner(f)
@@ -62,7 +62,7 @@ func GetDateSeconds(filename string) map[types.Date]types.Seconds {
     return dateToSeconds
 }
 
-func AddTimeout(filename string, insertion_date types.Date, timeout types.Seconds) {
+func AddTimeout(filename string, insertion_date types.Date, timeout types.DaySeconds) {
 	date_list := dateList{}
     lines := GetDateSeconds(filename)
 

@@ -28,18 +28,15 @@ func open(dir string) (*bolt.DB, error) {
 	return db, nil
 }
 
-func GetSeconds(b *bolt.Bucket, key string) types.Seconds {
+func GetSeconds(b *bolt.Bucket, key string) types.DaySeconds {
 	return types.CreateSecondsFromBytes(b.Get([]byte(key)))
 }
 
-func SetSeconds(b *bolt.Bucket, key string, secs types.Seconds) {
-	if secs > types.SECONDS_IN_DAY {
-		secs = types.SECONDS_IN_DAY
-	}
+func SetSeconds(b *bolt.Bucket, key string, secs types.DaySeconds) {
 	timeout_bytes := make([]byte, 4, 4)
-	binary.BigEndian.PutUint32(timeout_bytes[:], uint32(secs))
+	binary.BigEndian.PutUint32(timeout_bytes[:], uint32(secs.GetAsUint32()))
 
-	if secs == 0 {
+	if secs.IsZero() {
 		b.Delete([]byte(key))
 	} else {
 		b.Put([]byte(key), timeout_bytes) // TODO: Error handling.
@@ -60,9 +57,9 @@ func SetTimestamp(b *bolt.Bucket, key string, t time.Time) {
 	b.Put([]byte(key), raw)     // TODO: Error handling.
 }
 
-func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs types.Seconds) {
+func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs types.DaySeconds) {
 	old_seconds := GetSeconds(b, date_key)
-	SetSeconds(b, date_key, old_seconds+secs)
+	SetSeconds(b, date_key, old_seconds.Add(secs))
 }
 
 func ViewCmd(cacheDir string, f func(*bolt.Tx) error) {
