@@ -1,16 +1,18 @@
 package cmds
 
-import "github.com/alanxoc3/ttrack/internal/types"
-import "github.com/alanxoc3/ttrack/internal/ttdb"
 import (
 	"strings"
 	"time"
+
+	"github.com/alanxoc3/ttrack/internal/ttdb"
+	"github.com/alanxoc3/ttrack/internal/types"
+
 	bolt "go.etcd.io/bbolt"
 )
 
 type bucketInterface interface {
-	Bucket([]byte)*bolt.Bucket
-	CreateBucket([]byte)(*bolt.Bucket, error)
+	Bucket([]byte) *bolt.Bucket
+	CreateBucket([]byte) (*bolt.Bucket, error)
 }
 
 func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondition bool) (*bolt.Bucket, error) {
@@ -20,50 +22,55 @@ func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondi
 	} else if b == nil {
 		var err error
 		b, err = parent.CreateBucket([]byte(key))
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 	}
 	return b, nil
 }
 
-func recLogic(now, beg_ts, end_ts time.Time, timeout types.Seconds) (time.Time, time.Time, types.Seconds, bool) {
+func recLogic(now, beg_ts, end_ts time.Time, timeout types.DaySeconds) (time.Time, time.Time, types.DaySeconds, bool) {
 	time_elapsed := now.Sub(end_ts)
-	duration := types.Seconds(0)
+	duration := types.DaySeconds{}
 	finish := false
 
 	if beg_ts.IsZero() || end_ts.IsZero() {
 		beg_ts = now
-	} else if time_elapsed.Seconds() > float64(timeout) {
-		duration = types.Seconds(end_ts.Sub(beg_ts).Seconds()) + timeout
+	} else if time_elapsed.Seconds() > float64(timeout.GetAsUint32()) {
+		duration = types.CreateSecondsFromUint32(uint32(end_ts.Sub(beg_ts).Seconds())).Add(timeout)
 		finish = true
 		beg_ts = now
 	} else {
-		duration = types.Seconds(now.Sub(beg_ts).Seconds())
+		duration = types.CreateSecondsFromUint32(uint32(now.Sub(beg_ts).Seconds()))
 	}
 
 	return beg_ts, now, duration, finish
 }
 
-func addSecondToMap(m map[string]types.Seconds, key string, num types.Seconds) {
-	if num == 0 { return }
-	var base_val types.Seconds
-	if v, ok := m[key]; ok { base_val = v }
-	m[key] = base_val + num
-	if m[key] > types.SECONDS_IN_DAY {
-		m[key] = types.SECONDS_IN_DAY
+func addSecondToMap(m map[string]types.DaySeconds, key string, num types.DaySeconds) {
+	if num.IsZero() {
+		return
 	}
+	var base_val types.DaySeconds
+	if v, ok := m[key]; ok {
+		base_val = v
+	}
+	m[key] = base_val.Add(num)
 }
 
 func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	return tx.Bucket([]byte(group))
 }
 
-func expandGroup(b *bolt.Bucket) (time.Time, time.Time, types.Seconds) {
+func expandGroup(b *bolt.Bucket) (time.Time, time.Time, types.DaySeconds) {
 	return ttdb.GetTimestamp(b, "beg"), ttdb.GetTimestamp(b, "end"), ttdb.GetSeconds(b, "out")
 }
 
 func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	gb := tx.Bucket([]byte(group))
-	if gb == nil { return nil }
+	if gb == nil {
+		return nil
+	}
 
 	rb := gb.Bucket([]byte("rec"))
 	return rb
@@ -75,8 +82,8 @@ func is_date_str_in_range(date, beg_date, end_date string) bool {
 }
 
 /*
-func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]types.Seconds {
-	m := map[string]types.Seconds{}
+func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]types.DaySeconds {
+	m := map[string]types.DaySeconds{}
 
 	gb := getGroupBucket(tx, group)
 	if gb == nil { return m }

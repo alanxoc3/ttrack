@@ -23,7 +23,7 @@ type State struct {
 	Groups    []string
 	Date      types.Date
 	Now       time.Time
-	Duration  types.Seconds
+	Duration  types.DaySeconds
 }
 
 func CpFunc(s *State) {
@@ -67,12 +67,12 @@ func SetFunc(s *State) {
 			return fmt.Errorf("you can't set the zero types")
 		}
 
-		gb, err := getOrCreateBucketConditionally(tx, group, duration == 0)
+		gb, err := getOrCreateBucketConditionally(tx, group, duration.IsZero())
 		if gb == nil || err != nil {
 			return err
 		}
 
-		rb, err := getOrCreateBucketConditionally(gb, "rec", duration == 0)
+		rb, err := getOrCreateBucketConditionally(gb, "rec", duration.IsZero())
 		if rb == nil || err != nil {
 			return err
 		}
@@ -89,7 +89,7 @@ func AggFunc(s *State) {
 		    group := s.Groups[0]
 		    beg_date := s.BeginDate.String()
 		    end_date := s.EndDate.String()
-			var secs types.Seconds
+			var secs types.DaySeconds
 
 			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 				m := getDateMap(tx, group, beg_date, end_date)
@@ -111,7 +111,7 @@ func ViewFunc(s *State) {
 		    beg_date := s.BeginDate.ToDate()
 		    end_date := s.EndDate.ToDate()
 
-			dateMap := map[string]types.Seconds{}
+			dateMap := map[string]types.DaySeconds{}
 
 			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 				dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
@@ -168,14 +168,14 @@ func RecFunc(s *State) {
 	// Update cache.
 	// If new, append to txt file.
 	var timestamp_to_write *types.Date
-	var seconds_to_write *types.Seconds
+	var seconds_to_write *types.DaySeconds
 
 	group := s.Groups[0]
 	timeout_param := s.Duration
 
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		// If the bucket doesn't exist and the timeout is zero, do nothing.
-		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
+		b, err := getOrCreateBucketConditionally(tx, group, timeout_param.IsZero())
 		if b == nil || err != nil {
 			return err
 		}
@@ -183,7 +183,7 @@ func RecFunc(s *State) {
 		old_beg_ts, old_end_ts, old_timeout := expandGroup(b)
 		beg_ts, end_ts, duration, finish := recLogic(s.Now, old_beg_ts, old_end_ts, old_timeout)
 
-		if finish && duration > 0 {
+		if finish && !duration.IsZero() {
 			timestamp_to_write = types.CreateDateFromTime(old_beg_ts)
 			seconds_to_write = &duration
 		}
@@ -193,7 +193,7 @@ func RecFunc(s *State) {
 		}
 		ttdb.SetTimestamp(b, "end", end_ts)
 
-		if timeout_param > 0 {
+		if !timeout_param.IsZero() {
 			ttdb.SetSeconds(b, "out", timeout_param)
 		}
 

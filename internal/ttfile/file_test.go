@@ -43,7 +43,7 @@ func TestSeconds(t *testing.T) {
 	for _, v := range testVals {
 		t.Run(fmt.Sprintf("test-%s", v.input), func(t *testing.T) {
         	execTest(t, func(dir string) {
-        		var secs seconds.Seconds
+        		var secs seconds.DaySeconds
         		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
         			bucket, err := b.CreateBucket([]byte("group"))
         			ttdb.SetSeconds(bucket, "key", seconds.CreateFromString(v.input))
