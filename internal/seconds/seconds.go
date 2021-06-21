@@ -29,11 +29,11 @@ func CreateFromBytes(b []byte) Seconds {
 }
 
 // Used with files and cache.
-func (s *Seconds) CapAtOneDay() Seconds {
-	if *s > SECONDS_IN_DAY {
+func (s Seconds) CapAtOneDay() Seconds {
+	if s > SECONDS_IN_DAY {
 		return SECONDS_IN_DAY
 	}
-	return *s
+	return s
 }
 
 // Used for writing to files.
