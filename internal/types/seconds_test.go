@@ -1,24 +1,24 @@
-package seconds_test
+package types_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateFromDuration(t *testing.T) {
 	dur, _ := time.ParseDuration("1m3s")
-	sec := seconds.CreateFromDuration(dur)
-	assert.Equal(t, seconds.Seconds(63), sec)
+	sec := types.CreateSecondsFromDuration(dur)
+	assert.Equal(t, types.Seconds(63), sec)
 }
 
 func TestString(t *testing.T) {
 	var testVals = []struct {
 		expected string
-		sec  seconds.Seconds
+		sec  types.Seconds
 	}{
 		{"0s", 0},
 		{"1s", 1},

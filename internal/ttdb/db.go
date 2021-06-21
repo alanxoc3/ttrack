@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/types"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -28,13 +28,13 @@ func open(dir string) (*bolt.DB, error) {
 	return db, nil
 }
 
-func GetSeconds(b *bolt.Bucket, key string) seconds.Seconds {
-	return seconds.CreateFromBytes(b.Get([]byte(key)))
+func GetSeconds(b *bolt.Bucket, key string) types.Seconds {
+	return types.CreateSecondsFromBytes(b.Get([]byte(key)))
 }
 
-func SetSeconds(b *bolt.Bucket, key string, secs seconds.Seconds) {
-	if secs > seconds.SECONDS_IN_DAY {
-		secs = seconds.SECONDS_IN_DAY
+func SetSeconds(b *bolt.Bucket, key string, secs types.Seconds) {
+	if secs > types.SECONDS_IN_DAY {
+		secs = types.SECONDS_IN_DAY
 	}
 	timeout_bytes := make([]byte, 4, 4)
 	binary.BigEndian.PutUint32(timeout_bytes[:], uint32(secs))
@@ -60,7 +60,7 @@ func SetTimestamp(b *bolt.Bucket, key string, t time.Time) {
 	b.Put([]byte(key), raw)     // TODO: Error handling.
 }
 
-func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs seconds.Seconds) {
+func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs types.Seconds) {
 	old_seconds := GetSeconds(b, date_key)
 	SetSeconds(b, date_key, old_seconds+secs)
 }

@@ -8,21 +8,20 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/alanxoc3/ttrack/internal/date"
-	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/types"
 )
 
-type dateList []date.Date
+type dateList []types.Date
 func (dl dateList) Len() int { return len(dl) }
 func (dl dateList) Less(i, j int) bool { return dl[i].IsLessThan(dl[j]) }
 func (dl dateList) Swap(i, j int) { dl[i], dl[j] = dl[j], dl[i] }
 
 type dateSeconds struct {
-    Date date.Date
-    Seconds seconds.Seconds
+    Date types.Date
+    Seconds types.Seconds
 }
 
-func insertOrAdd(dateToSeconds map[date.Date]seconds.Seconds, day date.Date, secs seconds.Seconds) {
+func insertOrAdd(dateToSeconds map[types.Date]types.Seconds, day types.Date, secs types.Seconds) {
 	if day.IsZero() || secs == 0 { return }
 
 	if val, ok := dateToSeconds[day]; ok {
@@ -32,8 +31,8 @@ func insertOrAdd(dateToSeconds map[date.Date]seconds.Seconds, day date.Date, sec
 	}
 }
 
-func GetDateSeconds(filename string) map[date.Date]seconds.Seconds {
-	dateToSeconds := map[date.Date]seconds.Seconds{}
+func GetDateSeconds(filename string) map[types.Date]types.Seconds {
+	dateToSeconds := map[types.Date]types.Seconds{}
 
 	if f, err := os.Open(filename); err == nil {
 		scanner := bufio.NewScanner(f)
@@ -44,8 +43,8 @@ func GetDateSeconds(filename string) map[date.Date]seconds.Seconds {
 			tokens := strings.Split(line, ":")
 			if len(tokens) == 2 {
 				// TODO: Log errors?
-				d, _ := date.CreateFromString(strings.TrimSpace(tokens[0]))
-				s := seconds.CreateFromString(strings.TrimSpace(tokens[1]))
+				d, _ := types.CreateDateFromString(strings.TrimSpace(tokens[0]))
+				s := types.CreateSecondsFromString(strings.TrimSpace(tokens[1]))
 				if d != nil { insertOrAdd(dateToSeconds, *d, s) }
 			} else {
 				// TODO: Log errors?
@@ -63,7 +62,7 @@ func GetDateSeconds(filename string) map[date.Date]seconds.Seconds {
     return dateToSeconds
 }
 
-func AddTimeout(filename string, insertion_date date.Date, timeout seconds.Seconds) {
+func AddTimeout(filename string, insertion_date types.Date, timeout types.Seconds) {
 	date_list := dateList{}
     lines := GetDateSeconds(filename)
 

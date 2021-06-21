@@ -5,8 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/alanxoc3/ttrack/internal/date"
-	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/alanxoc3/ttrack/internal/ttdb"
 	"github.com/alanxoc3/ttrack/internal/ttfile"
 
@@ -16,15 +15,15 @@ import (
 type State struct {
 	CacheDir  string
 	DataDir   string
-	BeginDate date.Date
-	EndDate   date.Date
+	BeginDate types.Date
+	EndDate   types.Date
 	Recursive bool
 	Daily     bool
 	Quote     bool
 	Groups    []string
-	Date      date.Date
+	Date      types.Date
 	Now       time.Time
-	Duration  seconds.Seconds
+	Duration  types.Seconds
 }
 
 func CpFunc(s *State) {
@@ -65,7 +64,7 @@ func SetFunc(s *State) {
 
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
-			return fmt.Errorf("you can't set the zero date")
+			return fmt.Errorf("you can't set the zero types")
 		}
 
 		gb, err := getOrCreateBucketConditionally(tx, group, duration == 0)
@@ -90,7 +89,7 @@ func AggFunc(s *State) {
 		    group := s.Groups[0]
 		    beg_date := s.BeginDate.String()
 		    end_date := s.EndDate.String()
-			var secs seconds.Seconds
+			var secs types.Seconds
 
 			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 				m := getDateMap(tx, group, beg_date, end_date)
@@ -112,7 +111,7 @@ func ViewFunc(s *State) {
 		    beg_date := s.BeginDate.ToDate()
 		    end_date := s.EndDate.ToDate()
 
-			dateMap := map[string]seconds.Seconds{}
+			dateMap := map[string]types.Seconds{}
 
 			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
 				dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
@@ -168,8 +167,8 @@ func DelFunc(s *State) {
 func RecFunc(s *State) {
 	// Update cache.
 	// If new, append to txt file.
-	var timestamp_to_write *date.Date
-	var seconds_to_write *seconds.Seconds
+	var timestamp_to_write *types.Date
+	var seconds_to_write *types.Seconds
 
 	group := s.Groups[0]
 	timeout_param := s.Duration
@@ -185,7 +184,7 @@ func RecFunc(s *State) {
 		beg_ts, end_ts, duration, finish := recLogic(s.Now, old_beg_ts, old_end_ts, old_timeout)
 
 		if finish && duration > 0 {
-			timestamp_to_write = date.CreateFromTime(old_beg_ts)
+			timestamp_to_write = types.CreateDateFromTime(old_beg_ts)
 			seconds_to_write = &duration
 		}
 
