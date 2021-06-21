@@ -6,9 +6,8 @@ import (
 	"os"
 	"os/user"
 
-	"github.com/alanxoc3/ttrack/internal/date"
+	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/alanxoc3/ttrack/internal/cmds"
-	"github.com/alanxoc3/ttrack/internal/seconds"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +23,7 @@ func parseRecArgs(args []string, s *cmds.State) {
 		panic(durerr)
 	}
 	s.Groups = []string{args[0]}
-	s.Duration = seconds.CreateFromDuration(dur)
+	s.Duration = types.CreateSecondsFromDuration(dur)
 }
 
 func parseGroups(args []string, s *cmds.State) {
@@ -32,7 +31,7 @@ func parseGroups(args []string, s *cmds.State) {
 }
 
 func parseSetArgs(args []string, s *cmds.State) {
-	ts, tserr := date.CreateFromString(args[1])
+	ts, tserr := types.CreateDateFromString(args[1])
 	if tserr != nil {
 		panic(tserr)
 	}
@@ -42,7 +41,7 @@ func parseSetArgs(args []string, s *cmds.State) {
 		panic(durerr)
 	}
 
-    s.Duration = seconds.CreateFromDuration(dur)
+    s.Duration = types.CreateSecondsFromDuration(dur)
     s.Groups = []string{args[0]}
     s.Date = *ts
 }

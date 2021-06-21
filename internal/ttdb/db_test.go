@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/alanxoc3/ttrack/internal/ttdb"
 	"github.com/stretchr/testify/assert"
 
@@ -42,10 +42,10 @@ func TestSeconds(t *testing.T) {
 	for _, v := range testVals {
 		t.Run(fmt.Sprintf("test-%s", v.input), func(t *testing.T) {
         	execTest(t, func(dir string) {
-        		var secs seconds.Seconds
+        		var secs types.Seconds
         		ttdb.UpdateCmd(dir, func(b *bolt.Tx) error {
         			bucket, err := b.CreateBucket([]byte("group"))
-        			ttdb.SetSeconds(bucket, "key", seconds.CreateFromString(v.input))
+        			ttdb.SetSeconds(bucket, "key", types.CreateSecondsFromString(v.input))
         			return err
         		})
 

@@ -1,4 +1,4 @@
-package seconds
+package types
 
 import (
 	"encoding/binary"
@@ -10,18 +10,18 @@ type Seconds uint32
 
 const SECONDS_IN_DAY Seconds = 86400
 
-func CreateFromDuration(d time.Duration) Seconds {
+func CreateSecondsFromDuration(d time.Duration) Seconds {
 	return Seconds(d.Milliseconds() / 1000)
 }
 
 // Used with files.
-func CreateFromString(s string) Seconds {
+func CreateSecondsFromString(s string) Seconds {
     dur, _ := time.ParseDuration(s) // TODO: Should something be done with an error?
-    return CreateFromDuration(dur)
+    return CreateSecondsFromDuration(dur)
 }
 
 // Used with the cache.
-func CreateFromBytes(b []byte) Seconds {
+func CreateSecondsFromBytes(b []byte) Seconds {
 	if b == nil {
 		return 0
 	}

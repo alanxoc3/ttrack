@@ -1,4 +1,4 @@
-package date
+package types
 
 import "time"
 import "fmt"
@@ -11,18 +11,14 @@ type Date struct {
 	day uint8
 }
 
-func CreateFromString(datestr string) (*Date, error) {
+func CreateDateFromString(datestr string) (*Date, error) {
 	ts, err := time.Parse(DATE_FORMAT_STRING, datestr)
 	if err != nil { return nil, err }
-	return CreateFromTime(ts), nil
+	return CreateDateFromTime(ts), nil
 }
 
-func CreateFromTime(ts time.Time) *Date {
+func CreateDateFromTime(ts time.Time) *Date {
 	return &Date{uint16(ts.Year()-1), uint8(ts.Month()-1), uint8(ts.Day()-1)}
-}
-
-func dateStrToTimestamp(datestr string) (time.Time, error) {
-	return time.Parse(DATE_FORMAT_STRING, datestr)
 }
 
 func (d *Date) String() string {
@@ -40,7 +36,7 @@ func (d1 *Date) IsLessThan(d2 Date) bool {
 }
 
 func (d *Date) Set(s string) error {
-	v, err := CreateFromString(s)
+	v, err := CreateDateFromString(s)
 	if err == nil { *d = Date(*v) }
 	return err
 }

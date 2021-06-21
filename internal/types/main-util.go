@@ -1,11 +1,8 @@
-package cmds
+package types
 
 import (
 	"strings"
-	"time"
 )
-
-var DATE_FORMAT_STRING string = "2006-01-02"
 
 func clean_group(group string) string {
 	fields := strings.FieldsFunc(group, func(c rune) bool { return c == '/' })
@@ -22,11 +19,4 @@ func clean_group(group string) string {
 
 	group = strings.Join(newFields, "/")
 	return group
-}
-
-func formatTimestamp(timestamp time.Time) string {
-	if timestamp.IsZero() {
-		return ""
-	}
-	return timestamp.Format(DATE_FORMAT_STRING)
 }

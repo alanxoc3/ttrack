@@ -1,6 +1,6 @@
 package cmds
 
-import "github.com/alanxoc3/ttrack/internal/seconds"
+import "github.com/alanxoc3/ttrack/internal/types"
 import "github.com/alanxoc3/ttrack/internal/ttdb"
 import (
 	"strings"
@@ -25,31 +25,31 @@ func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondi
 	return b, nil
 }
 
-func recLogic(now, beg_ts, end_ts time.Time, timeout seconds.Seconds) (time.Time, time.Time, seconds.Seconds, bool) {
+func recLogic(now, beg_ts, end_ts time.Time, timeout types.Seconds) (time.Time, time.Time, types.Seconds, bool) {
 	time_elapsed := now.Sub(end_ts)
-	duration := seconds.Seconds(0)
+	duration := types.Seconds(0)
 	finish := false
 
 	if beg_ts.IsZero() || end_ts.IsZero() {
 		beg_ts = now
 	} else if time_elapsed.Seconds() > float64(timeout) {
-		duration = seconds.Seconds(end_ts.Sub(beg_ts).Seconds()) + timeout
+		duration = types.Seconds(end_ts.Sub(beg_ts).Seconds()) + timeout
 		finish = true
 		beg_ts = now
 	} else {
-		duration = seconds.Seconds(now.Sub(beg_ts).Seconds())
+		duration = types.Seconds(now.Sub(beg_ts).Seconds())
 	}
 
 	return beg_ts, now, duration, finish
 }
 
-func addSecondToMap(m map[string]seconds.Seconds, key string, num seconds.Seconds) {
+func addSecondToMap(m map[string]types.Seconds, key string, num types.Seconds) {
 	if num == 0 { return }
-	var base_val seconds.Seconds
+	var base_val types.Seconds
 	if v, ok := m[key]; ok { base_val = v }
 	m[key] = base_val + num
-	if m[key] > seconds.SECONDS_IN_DAY {
-		m[key] = seconds.SECONDS_IN_DAY
+	if m[key] > types.SECONDS_IN_DAY {
+		m[key] = types.SECONDS_IN_DAY
 	}
 }
 
@@ -57,7 +57,7 @@ func getGroupBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 	return tx.Bucket([]byte(group))
 }
 
-func expandGroup(b *bolt.Bucket) (time.Time, time.Time, seconds.Seconds) {
+func expandGroup(b *bolt.Bucket) (time.Time, time.Time, types.Seconds) {
 	return ttdb.GetTimestamp(b, "beg"), ttdb.GetTimestamp(b, "end"), ttdb.GetSeconds(b, "out")
 }
 
@@ -75,8 +75,8 @@ func is_date_str_in_range(date, beg_date, end_date string) bool {
 }
 
 /*
-func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]seconds.Seconds {
-	m := map[string]seconds.Seconds{}
+func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]types.Seconds {
+	m := map[string]types.Seconds{}
 
 	gb := getGroupBucket(tx, group)
 	if gb == nil { return m }
@@ -95,7 +95,7 @@ func getDateMap(tx *bolt.Tx, group, beg_bounds, end_bounds string) map[string]se
 	for k, v := c.First(); k != nil; k, v = c.Next() {
     		dateStr := string(k)
     		if is_date_str_in_range(dateStr, beg_bounds, end_bounds) {
-			addSecondToMap(m, string(k), seconds.CreateFromBytes(v))
+			addSecondToMap(m, string(k), types.CreateFromBytes(v))
     		}
 	}
 
