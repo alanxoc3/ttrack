@@ -33,6 +33,12 @@ func (d *Date) IsZero() bool {
 	return d.year == 0 && d.month == 0 && d.day == 0
 }
 
+func (d1 *Date) IsLessThan(d2 Date) bool {
+	return d1.year < d2.year ||
+        d1.year == d2.year && d1.month < d2.month ||
+        d1.year == d2.year && d1.month == d2.month && d1.day < d2.day
+}
+
 func (d *Date) Set(s string) error {
 	v, err := CreateFromString(s)
 	if err == nil { *d = Date(*v) }

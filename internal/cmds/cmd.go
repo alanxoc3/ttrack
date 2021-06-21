@@ -1,6 +1,5 @@
 package cmds
 
-import "github.com/alanxoc3/ttrack/internal/ttdb"
 import (
 	"fmt"
 	"sort"
@@ -8,57 +7,61 @@ import (
 
 	"github.com/alanxoc3/ttrack/internal/date"
 	"github.com/alanxoc3/ttrack/internal/seconds"
+	"github.com/alanxoc3/ttrack/internal/ttdb"
+	"github.com/alanxoc3/ttrack/internal/ttfile"
 
 	bolt "go.etcd.io/bbolt"
 )
 
 type State struct {
-    CacheDir string
-    DataDir string
+	CacheDir  string
+	DataDir   string
 	BeginDate date.Date
-	EndDate date.Date
+	EndDate   date.Date
 	Recursive bool
-	Daily bool
-	Quote bool
-	Groups []string
-	Date date.Date
-	Now time.Time
-	Duration seconds.Seconds
+	Daily     bool
+	Quote     bool
+	Groups    []string
+	Date      date.Date
+	Now       time.Time
+	Duration  seconds.Seconds
 }
 
 func CpFunc(s *State) {
-    srcGroup := s.Groups[0]
-    dstGroup := s.Groups[0]
-    beg_date := s.BeginDate.ToDate()
-    end_date := s.EndDate.ToDate()
+	/*
+		    srcGroup := s.Groups[0]
+		    dstGroup := s.Groups[0]
+		    beg_date := s.BeginDate.ToDate()
+		    end_date := s.EndDate.ToDate()
 
-	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
-		if len(m) == 0 {
-			return nil
-		}
+			ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
+				m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
+				if len(m) == 0 {
+					return nil
+				}
 
-		dstBucket, err := tx.CreateBucketIfNotExists([]byte(dstGroup))
-		if err != nil {
-			return err
-		}
+				dstBucket, err := tx.CreateBucketIfNotExists([]byte(dstGroup))
+				if err != nil {
+					return err
+				}
 
-		rec, err := dstBucket.CreateBucketIfNotExists([]byte("rec"))
-		if err != nil {
-			return err
-		}
+				rec, err := dstBucket.CreateBucketIfNotExists([]byte("rec"))
+				if err != nil {
+					return err
+				}
 
-		for k, v := range m {
-			ttdb.AddTimestampToBucket(rec, k, v)
-		}
-		return nil
-	})
+				for k, v := range m {
+					ttdb.AddTimestampToBucket(rec, k, v)
+				}
+				return nil
+			})
+	*/
 }
 
 func SetFunc(s *State) {
-    group := s.Groups[0]
-    timestamp := s.Date
-    duration := s.Duration
+	group := s.Groups[0]
+	timestamp := s.Date
+	duration := s.Duration
 
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		if timestamp.IsZero() {
@@ -83,47 +86,51 @@ func SetFunc(s *State) {
 }
 
 func AggFunc(s *State) {
-    group := s.Groups[0]
-    beg_date := s.BeginDate.String()
-    end_date := s.EndDate.String()
-	var secs seconds.Seconds
+	/*
+		    group := s.Groups[0]
+		    beg_date := s.BeginDate.String()
+		    end_date := s.EndDate.String()
+			var secs seconds.Seconds
 
-	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		m := getDateMap(tx, group, beg_date, end_date)
-		for _, v := range m {
-			secs += v
-		}
+			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
+				m := getDateMap(tx, group, beg_date, end_date)
+				for _, v := range m {
+					secs += v
+				}
 
-		return nil
-	})
+				return nil
+			})
 
-	fmt.Printf("%s\n", secs.String())
+			fmt.Printf("%s\n", secs.String())
 
+	*/
 }
 
 func ViewFunc(s *State) {
-    group := s.Groups[0]
-    beg_date := s.BeginDate.ToDate()
-    end_date := s.EndDate.ToDate()
+	/*
+		    group := s.Groups[0]
+		    beg_date := s.BeginDate.ToDate()
+		    end_date := s.EndDate.ToDate()
 
-	dateMap := map[string]seconds.Seconds{}
+			dateMap := map[string]seconds.Seconds{}
 
-	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
-		return nil
-	})
+			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
+				dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
+				return nil
+			})
 
-	dates := make([]string, 0, len(dateMap))
-	for k := range dateMap {
-		dates = append(dates, k)
-	}
+			dates := make([]string, 0, len(dateMap))
+			for k := range dateMap {
+				dates = append(dates, k)
+			}
 
-	sort.Strings(dates)
-	for _, d := range dates {
-		if v, ok := dateMap[d]; ok {
-			fmt.Printf("%s %s\n", d, v.String())
-		}
-	}
+			sort.Strings(dates)
+			for _, d := range dates {
+				if v, ok := dateMap[d]; ok {
+					fmt.Printf("%s %s\n", d, v.String())
+				}
+			}
+	*/
 }
 
 func ListFunc(s *State) {
@@ -146,7 +153,7 @@ func ListFunc(s *State) {
 }
 
 func DelFunc(s *State) {
-    group := s.Groups[0]
+	group := s.Groups[0]
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(group))
 		if b == nil {
@@ -159,24 +166,27 @@ func DelFunc(s *State) {
 }
 
 func RecFunc(s *State) {
-    group := s.Groups[0]
-    timeout_param := s.Duration
+	// Update cache.
+	// If new, append to txt file.
+	var timestamp_to_write *date.Date
+	var seconds_to_write *seconds.Seconds
+
+	group := s.Groups[0]
+	timeout_param := s.Duration
+
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
+		// If the bucket doesn't exist and the timeout is zero, do nothing.
 		b, err := getOrCreateBucketConditionally(tx, group, timeout_param == 0)
 		if b == nil || err != nil {
 			return err
 		}
 
-		old_beg_ts, old_end_ts, old_timeout, _ := expandGroup(b)
+		old_beg_ts, old_end_ts, old_timeout := expandGroup(b)
 		beg_ts, end_ts, duration, finish := recLogic(s.Now, old_beg_ts, old_end_ts, old_timeout)
 
 		if finish && duration > 0 {
-			rb, err := b.CreateBucketIfNotExists([]byte("rec"))
-			if err != nil {
-				return err
-			}
-
-			ttdb.AddTimestampToBucket(rb, formatTimestamp(old_beg_ts), duration)
+			timestamp_to_write = date.CreateFromTime(old_beg_ts)
+			seconds_to_write = &duration
 		}
 
 		if !old_beg_ts.Equal(beg_ts) {
@@ -190,4 +200,8 @@ func RecFunc(s *State) {
 
 		return nil
 	})
+
+	if timestamp_to_write != nil && seconds_to_write != nil {
+		ttfile.AddTimeout("test.txt", *timestamp_to_write, *seconds_to_write)
+	}
 }
