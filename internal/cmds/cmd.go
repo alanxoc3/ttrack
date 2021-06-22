@@ -20,7 +20,7 @@ type State struct {
 	Recursive bool
 	Daily     bool
 	Quote     bool
-	Groups    []string
+	Groups    []types.Group
 	Date      types.Date
 	Now       time.Time
 	Duration  types.DaySeconds
@@ -67,7 +67,7 @@ func SetFunc(s *State) {
 			return fmt.Errorf("you can't set the zero types")
 		}
 
-		gb, err := getOrCreateBucketConditionally(tx, group, duration.IsZero())
+		gb, err := getOrCreateBucketConditionally(tx, group.String(), duration.IsZero())
 		if gb == nil || err != nil {
 			return err
 		}
@@ -154,12 +154,12 @@ func ListFunc(s *State) {
 func DelFunc(s *State) {
 	group := s.Groups[0]
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(group))
+		b := tx.Bucket([]byte(group.String()))
 		if b == nil {
 			return nil
 		}
 
-		tx.DeleteBucket([]byte(group))
+		tx.DeleteBucket([]byte(group.String()))
 		return nil
 	})
 }
@@ -175,7 +175,7 @@ func RecFunc(s *State) {
 
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
 		// If the bucket doesn't exist and the timeout is zero, do nothing.
-		b, err := getOrCreateBucketConditionally(tx, group, timeout_param.IsZero())
+		b, err := getOrCreateBucketConditionally(tx, group.String(), timeout_param.IsZero())
 		if b == nil || err != nil {
 			return err
 		}
@@ -201,6 +201,6 @@ func RecFunc(s *State) {
 	})
 
 	if timestamp_to_write != nil && seconds_to_write != nil {
-		ttfile.AddTimeout("test.txt", *timestamp_to_write, *seconds_to_write)
+		ttfile.AddTimeout(group.String(), *timestamp_to_write, *seconds_to_write)
 	}
 }

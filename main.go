@@ -22,12 +22,16 @@ func parseRecArgs(args []string, s *cmds.State) {
 	if durerr != nil {
 		panic(durerr)
 	}
-	s.Groups = []string{args[0]}
+	s.Groups = []types.Group{types.CreateGroupFromString(args[0])}
 	s.Duration = types.CreateSecondsFromDuration(dur)
 }
 
 func parseGroups(args []string, s *cmds.State) {
-    s.Groups = args
+    groups := []types.Group{}
+    for _, v := range args {
+        groups = append(groups, types.CreateGroupFromString(v))
+    }
+    s.Groups = groups
 }
 
 func parseSetArgs(args []string, s *cmds.State) {
@@ -42,7 +46,7 @@ func parseSetArgs(args []string, s *cmds.State) {
 	}
 
     s.Duration = types.CreateSecondsFromDuration(dur)
-    s.Groups = []string{args[0]}
+    s.Groups = []types.Group{types.CreateGroupFromString(args[0])}
     s.Date = *ts
 }
 
