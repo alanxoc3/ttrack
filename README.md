@@ -136,5 +136,3 @@ Groups naming rules:
 What about timers? Two types of timers:
 * Wait until you hit a certain amount of time, then quit. So really like a wait/watch command.
 * Set a timer and update the db/storage with the amount of time in that timer. If you ctrl-c out of it, it will do some of the timer.
-
-
