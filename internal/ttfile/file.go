@@ -12,15 +12,15 @@ import (
 	"github.com/alanxoc3/ttrack/internal/types"
 )
 
-func insertOrAdd(dateToSeconds map[types.Date]types.DaySeconds, day types.Date, secs types.DaySeconds) {
-	if day.IsZero() || secs.IsZero() {
+func insertOrAdd(dateToSeconds map[types.Date]types.DaySeconds, day types.Date, newDurationFunc func(types.DaySeconds)types.DaySeconds) {
+	if day.IsZero() {
 		return
 	}
 
 	if val, ok := dateToSeconds[day]; ok {
-		dateToSeconds[day] = val.Add(secs)
+		dateToSeconds[day] = newDurationFunc(val)
 	} else {
-		dateToSeconds[day] = secs
+		dateToSeconds[day] = newDurationFunc(types.CreateSecondsFromUint32(0))
 	}
 }
 
@@ -39,7 +39,9 @@ func GetDateSeconds(filename string) map[types.Date]types.DaySeconds {
 				d, _ := types.CreateDateFromString(strings.TrimSpace(tokens[0]))
 				s := types.CreateSecondsFromString(strings.TrimSpace(tokens[1]))
 				if d != nil {
-					insertOrAdd(dateToSeconds, *d, s)
+					insertOrAdd(dateToSeconds, *d, func(ds types.DaySeconds)types.DaySeconds {
+                        return ds.Add(s)
+					})
 				}
 			} else {
 				// TODO: Log errors?
@@ -57,11 +59,11 @@ func GetDateSeconds(filename string) map[types.Date]types.DaySeconds {
 	return dateToSeconds
 }
 
-func AddTimeout(filename string, insertion_date types.Date, timeout types.DaySeconds) {
+func ModifyTime(filename string, insertion_date types.Date, newDurationFunc func(types.DaySeconds)types.DaySeconds) {
 	date_list := types.DateList{}
 	lines := GetDateSeconds(filename)
 
-	insertOrAdd(lines, insertion_date, timeout)
+	insertOrAdd(lines, insertion_date, newDurationFunc)
 
 	for k := range lines {
 		date_list = append(date_list, k)

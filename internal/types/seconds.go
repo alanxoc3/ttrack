@@ -40,6 +40,15 @@ func (s DaySeconds) Add(s2 DaySeconds) DaySeconds {
     return DaySeconds{val: s.val + s2.val}.capAtOneDay()
 }
 
+func (s DaySeconds) Sub(s2 DaySeconds) DaySeconds {
+    // Capping at one day isn't needed for subtraction.
+    if s.val <= s2.val {
+        return DaySeconds{0}
+    } else {
+        return DaySeconds{val: s.val - s2.val}
+    }
+}
+
 // Used for writing to files.
 func (s *DaySeconds) String() string {
 	dur := time.Duration(s.val) * time.Second

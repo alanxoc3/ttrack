@@ -59,29 +59,20 @@ func CpFunc(s *State) {
 }
 
 func SetFunc(s *State) {
-	group := s.Groups[0]
-	timestamp := s.Date
-	duration := s.Duration
+	ttfile.ModifyTime(filepath.Join(s.DataDir, s.Groups[0].Filename()), s.Date, func(ds types.DaySeconds)types.DaySeconds {
+        return s.Duration
+	})
+}
 
-	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		if timestamp.IsZero() {
-			return fmt.Errorf("you can't set the zero types")
-		}
+func AddFunc(s *State) {
+	ttfile.ModifyTime(filepath.Join(s.DataDir, s.Groups[0].Filename()), s.Date, func(ds types.DaySeconds)types.DaySeconds {
+        return ds.Add(s.Duration)
+	})
+}
 
-		gb, err := getOrCreateBucketConditionally(tx, group.String(), duration.IsZero())
-		if gb == nil || err != nil {
-			return err
-		}
-
-		rb, err := getOrCreateBucketConditionally(gb, "rec", duration.IsZero())
-		if rb == nil || err != nil {
-			return err
-		}
-
-		date_key := timestamp.String()
-		ttdb.SetSeconds(rb, date_key, duration)
-
-		return nil
+func SubFunc(s *State) {
+	ttfile.ModifyTime(filepath.Join(s.DataDir, s.Groups[0].Filename()), s.Date, func(ds types.DaySeconds)types.DaySeconds {
+        return ds.Sub(s.Duration)
 	})
 }
 
@@ -119,7 +110,7 @@ func AggFunc(s *State) {
 
     sort.Sort(dates)
 	for _, d := range dates {
-		if v, ok := date_map[d]; ok {
+		if v, ok := date_map[d]; ok && !v.IsZero() {
 			fmt.Printf("%s: %s\n", d.String(), v.String())
 		}
 	}
@@ -282,6 +273,8 @@ func RecFunc(s *State) {
 	})
 
 	if timestamp_to_write != nil && seconds_to_write != nil {
-		ttfile.AddTimeout(filepath.Join(s.DataDir, group.Filename()), *timestamp_to_write, *seconds_to_write)
+		ttfile.ModifyTime(filepath.Join(s.DataDir, group.Filename()), *timestamp_to_write, func(ds types.DaySeconds)types.DaySeconds {
+            return ds.Add(*seconds_to_write)
+		})
 	}
 }
