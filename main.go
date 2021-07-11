@@ -103,7 +103,7 @@ func main() {
 	}
 
 	addCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
-	aggCmd     := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	aggCmd     := createCmd(&s, parseGroups,  cmds.AggFunc)
 	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
 	lsCmd    := createCmd(&s,   parseGroups, cmds.LsFunc)
 	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
@@ -127,7 +127,7 @@ func main() {
 	rmCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only delete records before or equal to this")
 
 	setCmdMeta(app, addCmd    , 3, true , "add <group> <date> <duration>", "adds the duration for a group's date")
-	setCmdMeta(app, aggCmd    , 1, true , "agg <group>..."               , "aggregate dates for range into single duration")
+	setCmdMeta(app, aggCmd    , 1, false, "agg <group>..."               , "aggregate dates for range into single duration")
 	setCmdMeta(app, cpCmd     , 2, false, "cp <src-group>... <dst-group>", "copy/merge groups")
 	setCmdMeta(app, lsCmd     , 0, false, "ls [<group>]..."              , "list groups")
 	setCmdMeta(app, mvCmd     , 2, false, "mv <src-group>... <dst-group>", "rename/merge groups")

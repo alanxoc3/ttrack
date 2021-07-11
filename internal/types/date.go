@@ -11,6 +11,18 @@ type Date struct {
 	day uint8
 }
 
+type DateList []Date
+
+func (dl DateList) Len() int           { return len(dl) }
+func (dl DateList) Less(i, j int) bool { return dl[i].IsLessThan(dl[j]) }
+func (dl DateList) Swap(i, j int)      { dl[i], dl[j] = dl[j], dl[i] }
+
+func IsDateBetween(b, m, e Date) bool {
+    return !m.IsZero() &&
+        (e.IsZero() || (m.IsLessThan(e) || m == e)) &&
+        (b.IsZero() || (b.IsLessThan(m) || b == m))
+}
+
 func CreateDateFromString(datestr string) (*Date, error) {
 	ts, err := time.Parse(DATE_FORMAT_STRING, datestr)
 	if err != nil { return nil, err }

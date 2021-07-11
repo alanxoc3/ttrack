@@ -86,24 +86,33 @@ func SetFunc(s *State) {
 }
 
 func AggFunc(s *State) {
-	/*
-		    group := s.Groups[0]
-		    beg_date := s.BeginDate.String()
-		    end_date := s.EndDate.String()
-			var secs types.DaySeconds
+    date_map := map[types.Date]types.DaySeconds{}
+    for _, group := range s.Groups {
+        local_date_map := ttfile.GetDateSeconds(filepath.Join(s.DataDir, group.Filename()))
 
-			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-				m := getDateMap(tx, group, beg_date, end_date)
-				for _, v := range m {
-					secs += v
-				}
+        for k, v := range local_date_map {
+            if types.IsDateBetween(s.BeginDate, k, s.EndDate) {
+                if date_map_val, exists := date_map[k]; exists {
+                    date_map[k] = date_map_val.Add(v)
+                } else {
+                    date_map[k] = v
+                }
+            }
+        }
+    }
 
-				return nil
-			})
+    dates := make(types.DateList, 0, len(date_map))
+    for k := range date_map {
+    	dates = append(dates, k)
+    }
 
-			fmt.Printf("%s\n", secs.String())
+    sort.Sort(dates)
+	for _, d := range dates {
+		if v, ok := date_map[d]; ok {
+			fmt.Printf("%s: %s\n", d.String(), v.String())
+		}
+	}
 
-	*/
 }
 
 func ViewFunc(s *State) {
