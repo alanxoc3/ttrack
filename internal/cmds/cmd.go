@@ -86,8 +86,19 @@ func SetFunc(s *State) {
 }
 
 func AggFunc(s *State) {
-    date_map := map[types.Date]types.DaySeconds{}
+    groupMap := map[types.Group]bool{}
     for _, group := range s.Groups {
+        groupMap[group] = true
+    }
+
+    if s.Recursive {
+        walkThroughGroups(s.DataDir, s.Groups, func(g types.Group){
+            groupMap[g] = true
+        })
+    }
+
+    date_map := map[types.Date]types.DaySeconds{}
+    for group := range groupMap {
         local_date_map := ttfile.GetDateSeconds(filepath.Join(s.DataDir, group.Filename()))
 
         for k, v := range local_date_map {
@@ -207,27 +218,31 @@ func getListOfGroups(dir string) []string {
 	return groups
 }
 
-func LsFunc(s *State) {
-    dirs := []string{}
-    if len(s.Groups) == 0 {
-        dirs = append(dirs, "")
-    } else {
-        for _, group := range s.Groups {
-            dirs = append(dirs, group.String())
-        }
-    }
-
-    visited_groups := map[string]bool{}
-    for _, dir := range dirs {
-        groups := getListOfGroups(filepath.Join(s.DataDir, dir))
+func walkThroughGroups(datadir string, groupdirs []types.Group, walkFunc func(types.Group)) {
+    visited_groups := map[types.Group]bool{}
+    for _, groupdir := range groupdirs {
+        groupdir_str := groupdir.String()
+        groups := getListOfGroups(filepath.Join(datadir, groupdir_str))
         for _, group := range groups {
-            group_with_path := filepath.Join(dir, group)
+            group_with_path := types.CreateGroupFromString(filepath.Join(groupdir_str, group))
+
             if _, exists := visited_groups[group_with_path]; !exists {
                 visited_groups[group_with_path] = true
-                fmt.Println(group_with_path)
+                walkFunc(group_with_path)
             }
         }
     }
+}
+
+func LsFunc(s *State) {
+    groups := s.Groups
+    if len(groups) == 0 {
+        groups = []types.Group{types.CreateGroupFromString("")}
+    }
+
+    walkThroughGroups(s.DataDir, groups, func(path types.Group) {
+        fmt.Println(path.String())
+    })
 }
 
 func RecFunc(s *State) {
