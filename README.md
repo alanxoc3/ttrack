@@ -108,7 +108,7 @@ Ttrack has very few dependencies outside of go's standard library. Here are all 
 * [BoltDb](https://github.com/etcd-io/bbolt) for implementing a cache.
 
 ## Development Notes
-This project is still very much in alpha. Below is my thought process and planning for ttrack. This section will go away soon.
+This project is still very much in alpha. Below is how I want the CLI api designed.
 
 ```
 ttrack [--help] [--version] <command>
@@ -117,25 +117,26 @@ ttrack help
 ttrack version
 ttrack tidy
 
-ttrack ls [<group>...] --recursive --quote
+ttrack ls [<group>...] --recursive
 
 ttrack rec <group> 1h10m30s
+
 ttrack set <group> 2021-01-01 20m30s
 ttrack add <group> 2021-01-01 20m30s
 ttrack sub <group> 2021-01-01 20m30s
 
-ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
-ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
-ttrack rm  <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive
-ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --recursive --daily
+ttrack mv <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05
+ttrack cp <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05
+
+ttrack rm  <group>... --begin-date=2021-01-01 --end-date=2021-01-05
+
+ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --daily
 ```
 
 Groups naming rules:
-* `.tt` will be removed if at end of group/subgroup.
-* Name cannot start with a `.`.
-* Slashes denote sub groups.
-* Timeout, begin ts, & end ts all go in cache.
+* Groups cannot end with `.tt`.
+* Groups cannot start with a `.`.
+* Groups cannot contain any whitespace as specified by [this page][isspace].
+* Groups cannot contain the `/` character. This is used to separate groups into a folder structure.
 
-What about timers? Two types of timers:
-* Wait until you hit a certain amount of time, then quit. So really like a wait/watch command.
-* Set a timer and update the db/storage with the amount of time in that timer. If you ctrl-c out of it, it will do some of the timer.
+[isspace]: https://golang.org/pkg/unicode/#IsSpace
