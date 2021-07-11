@@ -102,15 +102,15 @@ func main() {
     	Short: "A time tracking program.",
 	}
 
-	addCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
+	addCmd     := createCmd(&s, parseSetArgs, cmds.AddFunc)
 	aggCmd     := createCmd(&s, parseGroups,  cmds.AggFunc)
 	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
 	lsCmd    := createCmd(&s,   parseGroups, cmds.LsFunc)
 	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
 	recCmd     := createCmd(&s, parseRecArgs, cmds.RecFunc)
 	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
-	setCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
-	subCmd     := createCmd(&s, parseSetArgs, func(s *cmds.State) { fmt.Println("in implementation") })
+	setCmd     := createCmd(&s, parseSetArgs, cmds.SetFunc)
+	subCmd     := createCmd(&s, parseSetArgs, cmds.SubFunc)
 	tidyCmd    := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("tidying") })
 	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("ttrack " + version) })
 
