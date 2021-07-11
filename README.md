@@ -50,21 +50,24 @@ set-hook -g alert-activity "run-shell 'ttrack rec tmux 5s'"
 ```
 
 ### Kakoune
-[Kakoune](https://kakoune.org/) is CLI based text editor. Add this to your `kakrc`:
+[Kakoune](https://kakoune.org/) is CLI based text editor. Add this to your `kakrc` or `autoload` directory:
 ```
-hook global RawKey . %{
+hook global -group ttrack RawKey . %{
   evaluate-commands %sh{
     {
-      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "kak:$kak_bufname" 5s
+      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "kak/$kak_bufname" 5s
     } > /dev/null 2>&1 < /dev/null &
   }
+}
+
+hook global BufCreate .+\.tt %{
+    remove-hooks global ttrack
 }
 ```
 
 ### Concards
 [Concards](https://github.com/alanxoc3/concards) is a CLI based flashcard program. Add this to your `event-startup` and `event-review` hooks:
 ```
-#!/bin/bash
 ttrack rec concards 30s
 ```
 
