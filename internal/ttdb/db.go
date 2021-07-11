@@ -43,6 +43,9 @@ func SetSeconds(b *bolt.Bucket, key string, secs types.DaySeconds) {
 	}
 }
 
+// For adding seconds, do this:
+// SetSeconds(b, date_key, GetSeconds(b, date_key).Add(secs))
+
 func GetTimestamp(b *bolt.Bucket, key string) time.Time {
 	t := time.Time{}
 	b_val := b.Get([]byte(key))
@@ -55,11 +58,6 @@ func GetTimestamp(b *bolt.Bucket, key string) time.Time {
 func SetTimestamp(b *bolt.Bucket, key string, t time.Time) {
 	raw, _ := t.MarshalBinary() // TODO: Error handling.
 	b.Put([]byte(key), raw)     // TODO: Error handling.
-}
-
-func AddTimestampToBucket(b *bolt.Bucket, date_key string, secs types.DaySeconds) {
-	old_seconds := GetSeconds(b, date_key)
-	SetSeconds(b, date_key, old_seconds.Add(secs))
 }
 
 func ViewCmd(cacheDir string, f func(*bolt.Tx) error) {

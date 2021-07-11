@@ -2,12 +2,14 @@ package cmds
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"sort"
 	"time"
 
-	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/alanxoc3/ttrack/internal/ttdb"
 	"github.com/alanxoc3/ttrack/internal/ttfile"
+	"github.com/alanxoc3/ttrack/internal/types"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -19,7 +21,6 @@ type State struct {
 	EndDate   types.Date
 	Recursive bool
 	Daily     bool
-	Quote     bool
 	Groups    []types.Group
 	Date      types.Date
 	Now       time.Time
@@ -162,6 +163,62 @@ func DelFunc(s *State) {
 		tx.DeleteBucket([]byte(group.String()))
 		return nil
 	})
+}
+
+func getRelWithPanic(basepath, relpath string) string {
+    path, err := filepath.Rel(basepath, relpath)
+    if err != nil {
+        panic(err) // is this possible if datadir is invalid?
+    }
+    return path
+}
+
+func getListOfGroups(dir string) []string {
+    groups := []string{}
+	filepath.Walk(dir, func(path string, info os.FileInfo, e error) error {
+        if info == nil {
+			return filepath.SkipDir
+        }
+
+        group_name := getRelWithPanic(dir, path)
+        if info.IsDir() {
+            if group_name != "." && !types.IsValidGroupFolder(group_name) {
+                return filepath.SkipDir
+            }
+		} else {
+    		if types.IsValidGroupFile(group_name) {
+                group_cleaned_name := types.CreateGroupFromString(group_name).String()
+                groups = append(groups, group_cleaned_name)
+    		}
+        }
+
+		return nil
+	})
+
+	return groups
+}
+
+func LsFunc(s *State) {
+    dirs := []string{}
+    if len(s.Groups) == 0 {
+        dirs = append(dirs, "")
+    } else {
+        for _, group := range s.Groups {
+            dirs = append(dirs, group.String())
+        }
+    }
+
+    visited_groups := map[string]bool{}
+    for _, dir := range dirs {
+        groups := getListOfGroups(filepath.Join(s.DataDir, dir))
+        for _, group := range groups {
+            group_with_path := filepath.Join(dir, group)
+            if _, exists := visited_groups[group_with_path]; !exists {
+                visited_groups[group_with_path] = true
+                fmt.Println(group_with_path)
+            }
+        }
+    }
 }
 
 func RecFunc(s *State) {
