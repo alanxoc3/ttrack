@@ -12,17 +12,6 @@ import (
 	"github.com/alanxoc3/ttrack/internal/types"
 )
 
-type dateList []types.Date
-
-func (dl dateList) Len() int           { return len(dl) }
-func (dl dateList) Less(i, j int) bool { return dl[i].IsLessThan(dl[j]) }
-func (dl dateList) Swap(i, j int)      { dl[i], dl[j] = dl[j], dl[i] }
-
-type dateSeconds struct {
-	Date       types.Date
-	DaySeconds types.DaySeconds
-}
-
 func insertOrAdd(dateToSeconds map[types.Date]types.DaySeconds, day types.Date, secs types.DaySeconds) {
 	if day.IsZero() || secs.IsZero() {
 		return
@@ -69,7 +58,7 @@ func GetDateSeconds(filename string) map[types.Date]types.DaySeconds {
 }
 
 func AddTimeout(filename string, insertion_date types.Date, timeout types.DaySeconds) {
-	date_list := dateList{}
+	date_list := types.DateList{}
 	lines := GetDateSeconds(filename)
 
 	insertOrAdd(lines, insertion_date, timeout)
