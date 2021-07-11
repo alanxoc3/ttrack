@@ -115,7 +115,6 @@ func main() {
 	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("ttrack " + version) })
 
 	aggCmd.Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
-	aggCmd.Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "aggregate includes all sub groups recursively")
 	aggCmd.Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only aggregate dates after or equal to this")
 	aggCmd.Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only aggregate dates before or equal to this")
 	cpCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only copy dates after or equal to this")
