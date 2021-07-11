@@ -87,12 +87,8 @@ func SubFunc(s *State) {
 
 func AggFunc(s *State) {
 	groupMap := map[types.Group]bool{}
-	strat := walk_exist
-	if s.Recursive {
-    	strat = walk_recursive
-	}
 
-	walkThroughGroups(s.DataDir, s.Groups, strat, func(g types.Group) {
+	walkThroughGroups(s.DataDir, s.Groups, walk_recursive, func(g types.Group) {
 		groupMap[g] = true
 	})
 
@@ -230,7 +226,7 @@ func getListOfGroups(dir string, strat walkstrategy) []string {
 func walkThroughGroups(datadir string, groupdirs []types.Group, strat walkstrategy, walkFunc func(types.Group)) {
 	visited_groups := map[types.Group]bool{}
 	for _, groupdir := range groupdirs {
-        if strat == walk_exist && !groupdir.IsZero() {
+        if !groupdir.IsZero() {
     		if _, err := os.Stat(filepath.Join(datadir, groupdir.Filename())); !errors.Is(err, fs.ErrNotExist) {
     			if _, exists := visited_groups[groupdir]; !exists {
     				visited_groups[groupdir] = true
