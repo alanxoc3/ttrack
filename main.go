@@ -120,6 +120,7 @@ func main() {
 	aggCmd.Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only aggregate dates before or equal to this")
 	cpCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only copy dates after or equal to this")
 	cpCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only copy dates before or equal to this")
+	lsCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "list subgroups recursively")
 	mvCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only move/merge dates after or equal to this")
 	mvCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only move/merge dates before or equal to this")
 	rmCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "delete records in subgroups too")
