@@ -258,6 +258,6 @@ func RecFunc(s *State) {
 	})
 
 	if timestamp_to_write != nil && seconds_to_write != nil {
-		ttfile.AddTimeout(group.String(), *timestamp_to_write, *seconds_to_write)
+		ttfile.AddTimeout(filepath.Join(s.DataDir, group.Filename()), *timestamp_to_write, *seconds_to_write)
 	}
 }
