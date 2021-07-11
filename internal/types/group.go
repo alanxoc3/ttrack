@@ -11,6 +11,14 @@ type Group struct {
 	val string
 }
 
+func IsValidGroupFolder(path string) bool {
+    return len(path) > 0 && path == CreateGroupFromString(path).String()
+}
+
+func IsValidGroupFile(path string) bool {
+    return len(path) > 0 && path == CreateGroupFromString(path).Filename()
+}
+
 func CreateGroupFromString(group_str string) Group {
     // STEP 1: Divide string into directories.
 	fields := strings.FieldsFunc(group_str, func(c rune) bool { return c == '/' })
