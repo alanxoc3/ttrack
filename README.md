@@ -80,6 +80,20 @@ mp.add_periodic_timer(1, function()
 end)
 ```
 
+## Comparison With Similar Apps
+Here are some other time tracking applications and how ttrack relates to them:
+* [Watson](https://tailordev.github.io/Watson/): Records time by starting and stopping instead of continually updating.
+* [Gtm](https://github.com/laughedelic/gtm): Similar to watson, but meant for working in git.
+* [ActivityWatch](https://github.com/ActivityWatch/activitywatch): Heavier & more complex, but supports more features and granularity.
+* [WakaTime](https://wakatime.com/): Plugin oriented instead of cli based.
+* [SelfSpy](https://github.com/selfspy/selfspy): A daemon that records keystrokes and is X11 specific.
+
+## Dependencies
+Ttrack has very few dependencies outside of go's standard library. Here are all the direct dependencies:
+* [Cobra](https://github.com/spf13/cobra) for CLI arguments.
+* [Testify](https://github.com/stretchr/testify) for unit tests.
+* [BoltDb](https://github.com/etcd-io/bbolt) for implementing a cache.
+
 ## Internal Details
 Ttrack uses [BoltDb](https://github.com/etcd-io/bbolt) as cache. The "rec" command stores time tracking information in this file until the timeout has been reached, then the timestamp is added to a text file based on your group name.
 The format of the bolt db file looks similar to, not taking serialization/marshaling into account:
@@ -101,20 +115,6 @@ The text file format is also very simple. Here is an example of what it might lo
 2021-02-15 30s
 ...
 ```
-
-## Comparison Similar Apps
-Here are some other time tracking applications and how ttrack relates to them:
-* [Watson](https://tailordev.github.io/Watson/): Records time by starting and stopping instead of continually updating.
-* [Gtm](https://github.com/laughedelic/gtm): Similar to watson, but meant for working in git.
-* [ActivityWatch](https://github.com/ActivityWatch/activitywatch): Heavier & more complex, but supports more features and granularity.
-* [WakaTime](https://wakatime.com/): Plugin oriented instead of cli based.
-* [SelfSpy](https://github.com/selfspy/selfspy): A daemon that records keystrokes and is X11 specific.
-
-## Dependencies
-Ttrack has very few dependencies outside of go's standard library. Here are all the direct dependencies:
-* [Cobra](https://github.com/spf13/cobra) for CLI arguments.
-* [Testify](https://github.com/stretchr/testify) for unit tests.
-* [BoltDb](https://github.com/etcd-io/bbolt) for implementing a cache.
 
 ## Development Notes
 This project is still very much in alpha. Below is how I want the CLI api designed.
