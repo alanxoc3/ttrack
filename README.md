@@ -68,7 +68,16 @@ hook global BufCreate .+\.tt %{
 ### Concards
 [Concards](https://github.com/alanxoc3/concards) is a CLI based flashcard program. Add this to your `event-startup` and `event-review` hooks:
 ```
+#!/bin/bash
 ttrack rec concards 30s
+```
+
+### Mpv
+[Mpv](https://github.com/mpv-player/mpv) is a CLI based media player. Add this to a `~/.config/mpv/scripts/ttrack.lua` file:
+```
+mp.add_periodic_timer(1, function()
+    os.execute("ttrack rec mpv 3s")
+end)
 ```
 
 ## Internal Details
@@ -136,7 +145,7 @@ ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --daily
 Groups naming rules:
 * Groups cannot end with `.tt`.
 * Groups cannot start with a `.`.
-* Groups cannot contain any whitespace as specified by [this page][isspace].
+* Groups cannot contain any whitespace as specified by [here][isspace].
 * Groups cannot contain the `/` character. This is used to separate groups into a folder structure.
 
 [isspace]: https://golang.org/pkg/unicode/#IsSpace

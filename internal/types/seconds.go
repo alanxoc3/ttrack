@@ -5,7 +5,22 @@ import (
 	"time"
 )
 
-// This limits the agg output to 136 years. Meh, I won't live that long to care.
+// Limit for agg output is like 5 billion centuries. So yeah... a long long time.
+type MultiDaySeconds struct {
+	val uint64
+}
+
+func (mds MultiDaySeconds) AddDaySeconds(ds DaySeconds) MultiDaySeconds {
+    return MultiDaySeconds{val: mds.val + uint64(ds.val)}
+}
+
+func (s *MultiDaySeconds) String() string {
+	dur := time.Duration(s.val) * time.Second
+	return dur.String()
+}
+
+// DaySeconds Below
+
 type DaySeconds struct {
 	val uint32
 }

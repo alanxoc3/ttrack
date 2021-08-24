@@ -107,18 +107,25 @@ func AggFunc(s *State) {
 		}
 	}
 
-	dates := make(types.DateList, 0, len(date_map))
-	for k := range date_map {
-		dates = append(dates, k)
-	}
+    if s.Daily {
+    	dates := make(types.DateList, 0, len(date_map))
+    	for k := range date_map {
+    		dates = append(dates, k)
+    	}
 
-	sort.Sort(dates)
-	for _, d := range dates {
-		if v, ok := date_map[d]; ok && !v.IsZero() {
-			fmt.Printf("%s: %s\n", d.String(), v.String())
-		}
-	}
-
+    	sort.Sort(dates)
+    	for _, d := range dates {
+    		if v, ok := date_map[d]; ok && !v.IsZero() {
+    			fmt.Printf("%s: %s\n", d.String(), v.String())
+    		}
+    	}
+    } else {
+        totalSeconds := types.MultiDaySeconds{}
+    	for _, v := range date_map {
+            totalSeconds = totalSeconds.AddDaySeconds(v)
+    	}
+    	fmt.Printf("%s\n", totalSeconds.String())
+    }
 }
 
 func ViewFunc(s *State) {
