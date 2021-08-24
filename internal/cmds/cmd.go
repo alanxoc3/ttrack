@@ -85,14 +85,41 @@ func SubFunc(s *State) {
 	})
 }
 
+// TODO: Steps 2 & 3 below could be multi-threaded.
 func AggFunc(s *State) {
 	groupMap := map[types.Group]bool{}
 
+    // STEP 1: Get the groups recursively.
 	walkThroughGroups(s.DataDir, s.Groups, walk_recursive, func(g types.Group) {
 		groupMap[g] = true
 	})
 
 	date_map := map[types.Date]types.DaySeconds{}
+
+    // STEP 2: Populate from the cache.
+	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
+        for group := range groupMap {
+            b := tx.Bucket([]byte(group.String()))
+        	if b == nil { continue }
+
+            beg_ts, end_ts, timeout := expandGroup(b)
+    		_, _, duration, _ := recLogic(s.Now, beg_ts, end_ts, timeout)
+
+    		date_key := *types.CreateDateFromTime(beg_ts)
+
+			if types.IsDateBetween(s.BeginDate, date_key, s.EndDate) {
+				if date_map_val, exists := date_map[date_key]; exists {
+					date_map[date_key] = date_map_val.Add(duration)
+				} else {
+					date_map[date_key] = duration
+				}
+			}
+        }
+
+        return nil
+	})
+
+    // STEP 3: Populate from files.
 	for group := range groupMap {
 		local_date_map := ttfile.GetDateSeconds(filepath.Join(s.DataDir, group.Filename()))
 
