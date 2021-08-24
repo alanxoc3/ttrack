@@ -260,15 +260,12 @@ func getListOfGroups(dir string, strat walkstrategy) []string {
 func walkThroughGroups(datadir string, groupdirs []types.Group, strat walkstrategy, walkFunc func(types.Group)) {
 	visited_groups := map[types.Group]bool{}
 	for _, groupdir := range groupdirs {
+    	// Check for the group itself. It could be a folder or a .tt file.
         if !groupdir.IsZero() {
-    		if _, err := os.Stat(filepath.Join(datadir, groupdir.Filename())); !errors.Is(err, fs.ErrNotExist) {
-    			if _, exists := visited_groups[groupdir]; !exists {
-    				visited_groups[groupdir] = true
-    				walkFunc(groupdir)
-    			}
-    		}
+            _, folder_err := os.Stat(filepath.Join(datadir, groupdir.Filename()));
+            _, file_err   := os.Stat(filepath.Join(datadir, groupdir.String()));
 
-    		if _, err := os.Stat(filepath.Join(datadir, groupdir.String())); !errors.Is(err, fs.ErrNotExist) {
+    		if !errors.Is(folder_err, fs.ErrNotExist) || !errors.Is(file_err, fs.ErrNotExist) {
     			if _, exists := visited_groups[groupdir]; !exists {
     				visited_groups[groupdir] = true
     				walkFunc(groupdir)
@@ -276,6 +273,12 @@ func walkThroughGroups(datadir string, groupdirs []types.Group, strat walkstrate
     		}
         }
 
+        // Check the cache. Exact match or begins with .String() + "/".
+        // Do I need to split up the groups based on subdirs? Yes I do.
+        // How do I keep the order pretty?
+        // I probably have to load everything up at startup.
+
+        // Check for all sub groups.
 		groupdir_str := groupdir.String()
 		groups := getListOfGroups(filepath.Join(datadir, groupdir_str), strat)
 		for _, group := range groups {
