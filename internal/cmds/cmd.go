@@ -1,6 +1,7 @@
 package cmds
 
 import (
+    "strings"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -87,14 +88,10 @@ func SubFunc(s *State) {
 
 // TODO: Steps 2 & 3 below could be multi-threaded.
 func AggFunc(s *State) {
-	groupMap := map[types.Group]bool{}
+	date_map := map[types.Date]types.DaySeconds{}
 
     // STEP 1: Get the groups recursively.
-	walkThroughGroups(s.DataDir, s.Groups, walk_recursive, func(g types.Group) {
-		groupMap[g] = true
-	})
-
-	date_map := map[types.Date]types.DaySeconds{}
+	groupMap := walkThroughGroups(s.CacheDir, s.DataDir, s.Groups, walk_recursive)
 
     // STEP 2: Populate from the cache.
 	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
@@ -155,52 +152,6 @@ func AggFunc(s *State) {
     }
 }
 
-func ViewFunc(s *State) {
-	/*
-		    group := s.Groups[0]
-		    beg_date := s.BeginDate.ToDate()
-		    end_date := s.EndDate.ToDate()
-
-			dateMap := map[string]types.DaySeconds{}
-
-			ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-				dateMap = getDateMap(tx, group, beg_date.String(), end_date.String())
-				return nil
-			})
-
-			dates := make([]string, 0, len(dateMap))
-			for k := range dateMap {
-				dates = append(dates, k)
-			}
-
-			sort.Strings(dates)
-			for _, d := range dates {
-				if v, ok := dateMap[d]; ok {
-					fmt.Printf("%s %s\n", d, v.String())
-				}
-			}
-	*/
-}
-
-func ListFunc(s *State) {
-	groupList := []string{}
-	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		c := tx.Cursor()
-
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			groupList = append(groupList, string(k))
-		}
-
-		return nil
-	})
-
-	sort.Strings(groupList)
-	for _, g := range groupList {
-		fmt.Printf("%s\n", g)
-	}
-
-}
-
 func DelFunc(s *State) {
 	group := s.Groups[0]
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
@@ -217,19 +168,20 @@ func DelFunc(s *State) {
 func getRelWithPanic(basepath, relpath string) string {
 	path, err := filepath.Rel(basepath, relpath)
 	if err != nil {
-		panic(err) // is this possible if datadir is invalid?
+		panic(err) // is this possible if data_dir is invalid?
 	}
 	return path
 }
 
-func getListOfGroups(dir string, strat walkstrategy) []string {
+func getListOfGroups(data_dir string, strat walkstrategy) []string {
 	groups := []string{}
-	filepath.Walk(dir, func(path string, info os.FileInfo, e error) error {
+
+	filepath.Walk(data_dir, func(path string, info os.FileInfo, e error) error {
 		if info == nil {
 			return filepath.SkipDir
 		}
 
-		group_name := getRelWithPanic(dir, path)
+		group_name := getRelWithPanic(data_dir, path)
 		if types.IsValidGroupFile(group_name) || types.IsValidGroupFolder(group_name) {
 			group_cleaned_name := types.CreateGroupFromString(group_name).String()
 			groups = append(groups, group_cleaned_name)
@@ -257,18 +209,41 @@ func getListOfGroups(dir string, strat walkstrategy) []string {
 	return groups
 }
 
-func walkThroughGroups(datadir string, groupdirs []types.Group, strat walkstrategy, walkFunc func(types.Group)) {
+func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, strat walkstrategy) map[types.Group]bool {
 	visited_groups := map[types.Group]bool{}
+
+	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
+		possible_groups := []string{}
+
+        for _, group := range groupdirs {
+            possible_groups = append(possible_groups, group.String())
+            fmt.Println("DIR: '" + group.String() + "'")
+        }
+
+		c := tx.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+            cursor_group := string(k)
+            for _, group := range possible_groups {
+                if strings.HasPrefix(cursor_group, group + "/") || cursor_group == group {
+                    visited_groups[types.CreateGroupFromString(cursor_group)] = true
+                    fmt.Println("TESTING" + cursor_group)
+                }
+            }
+		}
+
+		return nil
+	})
+
+
 	for _, groupdir := range groupdirs {
     	// Check for the group itself. It could be a folder or a .tt file.
         if !groupdir.IsZero() {
-            _, folder_err := os.Stat(filepath.Join(datadir, groupdir.Filename()));
-            _, file_err   := os.Stat(filepath.Join(datadir, groupdir.String()));
+            _, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()));
+            _, file_err   := os.Stat(filepath.Join(data_dir, groupdir.String()));
 
     		if !errors.Is(folder_err, fs.ErrNotExist) || !errors.Is(file_err, fs.ErrNotExist) {
     			if _, exists := visited_groups[groupdir]; !exists {
     				visited_groups[groupdir] = true
-    				walkFunc(groupdir)
     			}
     		}
         }
@@ -280,16 +255,17 @@ func walkThroughGroups(datadir string, groupdirs []types.Group, strat walkstrate
 
         // Check for all sub groups.
 		groupdir_str := groupdir.String()
-		groups := getListOfGroups(filepath.Join(datadir, groupdir_str), strat)
+		groups := getListOfGroups(filepath.Join(data_dir, groupdir_str), strat)
 		for _, group := range groups {
 			group_with_path := types.CreateGroupFromString(filepath.Join(groupdir_str, group))
 
 			if _, exists := visited_groups[group_with_path]; !exists {
 				visited_groups[group_with_path] = true
-				walkFunc(group_with_path)
 			}
 		}
 	}
+
+	return visited_groups
 }
 
 func LsFunc(s *State) {
@@ -303,9 +279,17 @@ func LsFunc(s *State) {
         strat = walk_recursive
 	}
 
-	walkThroughGroups(s.DataDir, groups, strat, func(path types.Group) {
-		fmt.Println(path.String())
-	})
+	group_map := walkThroughGroups(s.CacheDir, s.DataDir, groups, strat)
+	group_list := make([]string, 0, len(group_map))
+	for k := range group_map {
+		group_list = append(group_list, k.String())
+	}
+	sort.Strings(group_list)
+
+	for _, v := range group_list {
+        fmt.Println(v)
+	}
+
 }
 
 func RecFunc(s *State) {
