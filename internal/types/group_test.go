@@ -49,3 +49,26 @@ func TestCreateGroupFromString(t *testing.T) {
 	}
 
 }
+
+func TestGetAncestors(t *testing.T) {
+	var testVals = []struct {
+		expectedAncestors []string
+		oldestAncestor string
+		child string
+	}{
+		{[]string{"z/a", "z/a/b", "z/a/b/c"}, "z", "z/a/b/c"},
+		{[]string{"a", "a/b", "a/b/c"}, "", "a/b/c"},
+		{[]string{"apple/banana/carrot"}, "apple/banana", "apple/banana/carrot"},
+	}
+
+	for _, v := range testVals {
+		t.Run(fmt.Sprintf("test-%s-%s", v.oldestAncestor, v.child), func(t *testing.T) {
+    		child := types.CreateGroupFromString(v.child)
+    		ancestors_as_groups := child.GetAncestors(types.CreateGroupFromString(v.oldestAncestor))
+    		actualAncestors := make([]string, 0, len(ancestors_as_groups))
+    		for _, ancestor := range ancestors_as_groups {
+                actualAncestors = append(actualAncestors, ancestor.String())
+    		}
+    		assert.Equal(t, v.expectedAncestors, actualAncestors)
+		})
+	}}
