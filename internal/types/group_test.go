@@ -56,9 +56,13 @@ func TestGetAncestors(t *testing.T) {
 		oldestAncestor string
 		child string
 	}{
-		{[]string{"z/a", "z/a/b", "z/a/b/c"}, "z", "z/a/b/c"},
+		{[]string{"z", "z/a", "z/a/b", "z/a/b/c"}, "z", "z/a/b/c"},
 		{[]string{"a", "a/b", "a/b/c"}, "", "a/b/c"},
-		{[]string{"apple/banana/carrot"}, "apple/banana", "apple/banana/carrot"},
+		{[]string{"a/b"}, "a/b", "a/b"},
+		{[]string{}, "a/b", ""},
+		{[]string{}, "", ""},
+		{[]string{}, "c", "a/b"},
+		{[]string{"apple/banana", "apple/banana/carrot"}, "apple/banana", "apple/banana/carrot"},
 	}
 
 	for _, v := range testVals {
