@@ -4,9 +4,11 @@ import (
 	"os"
 	"testing"
 
+/*
 	"github.com/alanxoc3/ttrack/internal/ttfile"
 	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/stretchr/testify/assert"
+	*/
 
 	"io/ioutil"
 )
@@ -21,6 +23,7 @@ func execTest(t *testing.T, testFunc func(string)) {
 	testFunc(dir)
 }
 
+/*
 func TestSeconds(t *testing.T) {
 	date, _ := types.CreateDateFromString("2021-12-31")
 	second := types.CreateSecondsFromString("1s")
@@ -34,3 +37,4 @@ func TestSeconds(t *testing.T) {
 		}, m)
 	})
 }
+*/
