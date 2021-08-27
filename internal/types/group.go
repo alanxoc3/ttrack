@@ -53,16 +53,24 @@ func (group Group) String() string {
 // If oldest_ancestor isn't actually an ancestor, an empty list will be returned.
 // Use the empty group to get all ancestors.
 func (group Group) GetAncestors(oldest_ancestor Group) []Group {
-    oldest_ancestor_dir := oldest_ancestor.val
-    if len(oldest_ancestor_dir) > 0 { oldest_ancestor_dir = oldest_ancestor_dir + "/" }
-    if oldest_ancestor_dir != "/" && !strings.HasPrefix(group.val, oldest_ancestor_dir) { return []Group{} }
+    if group.IsZero() {
+        return []Group{}
+    } else if group == oldest_ancestor {
+        return []Group{group}
+    } else if !oldest_ancestor.IsZero() && !strings.HasPrefix(group.val, oldest_ancestor.val + "/") {
+        return []Group{}
+    }
 
-    group_without_oldest_ancestor := strings.Replace(group.val, oldest_ancestor_dir, "", 1)
-    dirs := strings.Split(group_without_oldest_ancestor, "/")
-    ancestors := make([]Group, 0, len(dirs))
+    without_oldest_ancestor := CreateGroupFromString(strings.Replace(group.val, oldest_ancestor.val, "", 1))
+    dirs := strings.Split(without_oldest_ancestor.val, "/")
+    ancestors := make([]Group, 0, len(dirs)+1)
+    path := oldest_ancestor.val
+
+    if !oldest_ancestor.IsZero() { ancestors = append(ancestors, oldest_ancestor) }
+
     for _, dir := range dirs {
-        ancestors = append(ancestors, CreateGroupFromString(oldest_ancestor_dir + dir))
-        oldest_ancestor_dir = oldest_ancestor_dir + dir + "/"
+        path = path + "/" + dir
+        ancestors = append(ancestors, CreateGroupFromString(path))
     }
 
     return ancestors

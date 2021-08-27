@@ -205,7 +205,7 @@ func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, stra
             for _, group := range groupdirs {
                 for _, ancestor := range cursor_group.GetAncestors(group) {
                     visited_groups[ancestor] = true
-                    if strat == walk_level { break }
+                    if strat == walk_level && ancestor != group { break }
                 }
             }
 		}
