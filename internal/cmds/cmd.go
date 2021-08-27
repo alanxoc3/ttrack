@@ -1,7 +1,6 @@
 package cmds
 
 import (
-    "strings"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -19,8 +18,7 @@ import (
 
 type walkstrategy uint8
 const (
-    walk_exist walkstrategy = iota
-    walk_level
+    walk_level walkstrategy = iota
     walk_recursive
 )
 
@@ -187,23 +185,11 @@ func getListOfGroups(data_dir string, strat walkstrategy) []string {
 			groups = append(groups, group_cleaned_name)
 		}
 
-        if strat == walk_exist {
-			return filepath.SkipDir
-        } else if strat == walk_level {
-            if info.IsDir() && group_name == "." {
-                return nil
-            } else if info.IsDir() {
-    			return filepath.SkipDir
-            }
+        if info.IsDir() && group_name != "." && (strat == walk_level || !types.IsValidGroupFolder(group_name)) {
+            return filepath.SkipDir
         } else {
-            if info.IsDir() && (group_name == "." || types.IsValidGroupFolder(group_name)) {
-                return nil
-            } else if info.IsDir() {
-    			return filepath.SkipDir
-            }
+    		return nil
         }
-
-		return nil
 	})
 
 	return groups
@@ -213,27 +199,19 @@ func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, stra
 	visited_groups := map[types.Group]bool{}
 
 	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
-		possible_groups := []string{}
-
-        for _, group := range groupdirs {
-            possible_groups = append(possible_groups, group.String())
-            fmt.Println("DIR: '" + group.String() + "'")
-        }
-
 		c := tx.Cursor()
 		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-            cursor_group := string(k)
-            for _, group := range possible_groups {
-                if strings.HasPrefix(cursor_group, group + "/") || cursor_group == group {
-                    visited_groups[types.CreateGroupFromString(cursor_group)] = true
-                    fmt.Println("TESTING" + cursor_group)
+            cursor_group := types.CreateGroupFromString(string(k))
+            for _, group := range groupdirs {
+                for _, ancestor := range cursor_group.GetAncestors(group) {
+                    visited_groups[ancestor] = true
+                    if strat == walk_level { break }
                 }
             }
 		}
 
 		return nil
 	})
-
 
 	for _, groupdir := range groupdirs {
     	// Check for the group itself. It could be a folder or a .tt file.
