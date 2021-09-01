@@ -1,8 +1,13 @@
 package cmds
 
 import (
+	"errors"
+	"io/fs"
+	"os"
 	"strings"
 	"time"
+
+	"path/filepath"
 
 	"github.com/alanxoc3/ttrack/internal/ttdb"
 	"github.com/alanxoc3/ttrack/internal/types"
@@ -15,36 +20,16 @@ type bucketInterface interface {
 	CreateBucket([]byte) (*bolt.Bucket, error)
 }
 
-func getOrCreateBucketConditionally(parent bucketInterface, key string, nilCondition bool) (*bolt.Bucket, error) {
-	b := parent.Bucket([]byte(key))
-	if b == nil && nilCondition {
-		return nil, nil
-	} else if b == nil {
-		var err error
-		b, err = parent.CreateBucket([]byte(key))
-		if err != nil {
-			return nil, err
-		}
-	}
-	return b, nil
-}
-
-func recLogic(now, beg_ts, end_ts time.Time, timeout types.DaySeconds) (time.Time, time.Time, types.DaySeconds, bool) {
-	time_elapsed := now.Sub(end_ts)
-	duration := types.DaySeconds{}
-	finish := false
-
-	if beg_ts.IsZero() || end_ts.IsZero() {
-		beg_ts = now
-	} else if time_elapsed.Seconds() > float64(timeout.GetAsUint32()) {
-		duration = types.CreateSecondsFromUint32(uint32(end_ts.Sub(beg_ts).Seconds())).Add(timeout)
-		finish = true
-		beg_ts = now
+// duration -> the duration that should be saved.
+// final -> is the duration final/should beg_ts restart?
+func calcDuration(now, beg_ts, end_ts time.Time, timeout types.DaySeconds) (types.DaySeconds, bool) {
+    if beg_ts.IsZero() || end_ts.IsZero() || timeout.IsZero() {
+        return types.DaySeconds{}, false
+    } else if now.Sub(end_ts).Seconds() > float64(timeout.GetAsUint32()) {
+		return types.CreateSecondsFromUint32(uint32(end_ts.Sub(beg_ts).Seconds())).Add(timeout), true
 	} else {
-		duration = types.CreateSecondsFromUint32(uint32(now.Sub(beg_ts).Seconds()))
+    	return types.CreateSecondsFromUint32(uint32(now.Sub(beg_ts).Seconds())), false
 	}
-
-	return beg_ts, now, duration, finish
 }
 
 func addSecondToMap(m map[string]types.DaySeconds, key string, num types.DaySeconds) {
@@ -79,6 +64,91 @@ func getGroupRecBucket(tx *bolt.Tx, group string) *bolt.Bucket {
 func is_date_str_in_range(date, beg_date, end_date string) bool {
 	return (beg_date == "" || strings.Compare(beg_date, date) <= 0) &&
 		(end_date == "" || strings.Compare(end_date, date) >= 0)
+}
+
+func getRelWithPanic(basepath, relpath string) string {
+	path, err := filepath.Rel(basepath, relpath)
+	if err != nil {
+		panic(err) // is this possible if data_dir is invalid?
+	}
+	return path
+}
+
+func getListOfGroups(data_dir string, strat walkstrategy) []string {
+	groups := []string{}
+
+	filepath.Walk(data_dir, func(path string, info os.FileInfo, e error) error {
+		if info == nil {
+			return filepath.SkipDir
+		}
+
+		group_name := getRelWithPanic(data_dir, path)
+		if types.IsValidGroupFile(group_name) || types.IsValidGroupFolder(group_name) {
+			group_cleaned_name := types.CreateGroupFromString(group_name).String()
+			groups = append(groups, group_cleaned_name)
+		}
+
+		if info.IsDir() && group_name != "." && (strat == walk_level || !types.IsValidGroupFolder(group_name)) {
+			return filepath.SkipDir
+		} else {
+			return nil
+		}
+	})
+
+	return groups
+}
+
+func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, strat walkstrategy) map[types.Group]bool {
+	visited_groups := map[types.Group]bool{}
+
+	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
+		c := tx.Cursor()
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+			cursor_group := types.CreateGroupFromString(string(k))
+			for _, group := range groupdirs {
+				for _, ancestor := range cursor_group.GetAncestors(group) {
+					visited_groups[ancestor] = true
+					if strat == walk_level && ancestor != group {
+						break
+					}
+				}
+			}
+		}
+
+		return nil
+	})
+
+	for _, groupdir := range groupdirs {
+		// Check for the group itself. It could be a folder or a .tt file.
+		if !groupdir.IsZero() {
+			_, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()))
+			_, file_err := os.Stat(filepath.Join(data_dir, groupdir.String()))
+
+			if !errors.Is(folder_err, fs.ErrNotExist) || !errors.Is(file_err, fs.ErrNotExist) {
+				if _, exists := visited_groups[groupdir]; !exists {
+					visited_groups[groupdir] = true
+				}
+			}
+		}
+
+		// Check the cache. Exact match or begins with .String() + "/".
+		// Do I need to split up the groups based on subdirs? Yes I do.
+		// How do I keep the order pretty?
+		// I probably have to load everything up at startup.
+
+		// Check for all sub groups.
+		groupdir_str := groupdir.String()
+		groups := getListOfGroups(filepath.Join(data_dir, groupdir_str), strat)
+		for _, group := range groups {
+			group_with_path := types.CreateGroupFromString(filepath.Join(groupdir_str, group))
+
+			if _, exists := visited_groups[group_with_path]; !exists {
+				visited_groups[group_with_path] = true
+			}
+		}
+	}
+
+	return visited_groups
 }
 
 /*

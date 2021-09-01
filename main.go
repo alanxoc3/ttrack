@@ -111,7 +111,7 @@ func main() {
 	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
 	setCmd     := createCmd(&s, parseSetArgs, cmds.SetFunc)
 	subCmd     := createCmd(&s, parseSetArgs, cmds.SubFunc)
-	tidyCmd    := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("tidying") })
+	tidyCmd    := createCmd(&s, parseNothing, cmds.TidyFunc)
 	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("ttrack " + version) })
 
 	aggCmd.Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
