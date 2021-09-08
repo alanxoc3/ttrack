@@ -126,22 +126,19 @@ ttrack [--help] [--version] <command>
 
 ttrack help
 ttrack version
-ttrack tidy
 
-ttrack ls [<group>...] --recursive
+ttrack tidy --cached --stored
+ttrack ls [<group>...] --recursive --cached --stored
 
-ttrack rec <group> 1h10m30s
+ttrack rec <group> 15s
+ttrack set <group> 20m30s [2021-01-01]
+ttrack add <group> 20m30s [2021-01-01]
+ttrack sub <group> 20m30s [2021-01-01]
 
-ttrack set <group> 2021-01-01 20m30s
-ttrack add <group> 2021-01-01 20m30s
-ttrack sub <group> 2021-01-01 20m30s
-
-ttrack mv <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05
-ttrack cp <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05
-
-ttrack rm  <group>... --begin-date=2021-01-01 --end-date=2021-01-05
-
-ttrack agg <group>... --begin-date=2021-01-01 --end-date=2021-01-05 --daily
+ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
+ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
+ttrack rm  <group>...         --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
+ttrack agg <group>... --daily --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
 ```
 
 Groups naming rules:
