@@ -15,7 +15,7 @@ var version string = "snapshot"
 
 type parseFunc func([]string, *cmds.State)
 type cobraFunc func(*cobra.Command, []string)
-type execFunc func(*cmds.State)
+type execFunc func(*cmds.State)string
 
 func parseRecArgs(args []string, s *cmds.State) {
 	dur, durerr := time.ParseDuration(args[1])
@@ -58,13 +58,12 @@ func createCmd(s *cmds.State, pf parseFunc, ef execFunc) *cobra.Command {
 	return &cobra.Command{
         Run: func(cmd *cobra.Command, args []string) {
             pf(args, s)
-            ef(s)
+            output := ef(s)
+            if output != "" {
+                fmt.Print(output)
+            }
         },
 	}
-}
-
-func setStateMaxArg(argCount int, pfargs []string) {
-	fmt.Println("ttrack " + version)
 }
 
 func getEnvDir(appVar, xdgVar, homeFallback string) string {
@@ -104,15 +103,15 @@ func main() {
 
 	addCmd     := createCmd(&s, parseSetArgs, cmds.AddFunc)
 	aggCmd     := createCmd(&s, parseGroups,  cmds.AggFunc)
-	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
 	lsCmd    := createCmd(&s,   parseGroups, cmds.LsFunc)
-	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
 	recCmd     := createCmd(&s, parseRecArgs, cmds.RecFunc)
-	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State) { fmt.Println("in implementation") })
+	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
 	setCmd     := createCmd(&s, parseSetArgs, cmds.SetFunc)
 	subCmd     := createCmd(&s, parseSetArgs, cmds.SubFunc)
 	tidyCmd    := createCmd(&s, parseNothing, cmds.TidyFunc)
-	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State) { fmt.Println("ttrack " + version) })
+	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State)string { return "ttrack " + version })
 
 	aggCmd.Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
 	aggCmd.Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only aggregate dates after or equal to this")

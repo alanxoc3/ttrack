@@ -23,7 +23,7 @@ type bucketInterface interface {
 // duration -> the duration that should be saved.
 // final -> is the duration final/should beg_ts restart?
 func calcDuration(now, beg_ts, end_ts time.Time, timeout types.DaySeconds) (types.DaySeconds, bool) {
-    if beg_ts.IsZero() || end_ts.IsZero() || timeout.IsZero() {
+    if beg_ts.IsZero() || end_ts.IsZero() || timeout.IsZero() || now.Before(end_ts) || end_ts.Before(beg_ts) {
         return types.DaySeconds{}, false
     } else if now.Sub(end_ts).Seconds() > float64(timeout.GetAsUint32()) {
 		return types.CreateSecondsFromUint32(uint32(end_ts.Sub(beg_ts).Seconds())).Add(timeout), true
@@ -83,9 +83,12 @@ func getListOfGroups(data_dir string, strat walkstrategy) []string {
 		}
 
 		group_name := getRelWithPanic(data_dir, path)
-		if types.IsValidGroupFile(group_name) || types.IsValidGroupFolder(group_name) {
-			group_cleaned_name := types.CreateGroupFromString(group_name).String()
-			groups = append(groups, group_cleaned_name)
+		if !info.IsDir() && types.IsValidGroupFile(group_name) {
+			groups = append(groups, types.CreateGroupFromString(group_name).String())
+		}
+
+		if (strat == walk_recursive || strat == walk_level) && info.IsDir() && types.IsValidGroupFolder(group_name) {
+			groups = append(groups, types.CreateGroupFromString(group_name).String())
 		}
 
 		if info.IsDir() && group_name != "." && (strat == walk_level || !types.IsValidGroupFolder(group_name)) {
@@ -101,40 +104,42 @@ func getListOfGroups(data_dir string, strat walkstrategy) []string {
 func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, strat walkstrategy) map[types.Group]bool {
 	visited_groups := map[types.Group]bool{}
 
-	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
-		c := tx.Cursor()
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			cursor_group := types.CreateGroupFromString(string(k))
-			for _, group := range groupdirs {
-				for _, ancestor := range cursor_group.GetAncestors(group) {
-					visited_groups[ancestor] = true
-					if strat == walk_level && ancestor != group {
-						break
-					}
-				}
-			}
-		}
+    if strat == walk_level || strat == walk_recursive {
+    	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
+    		c := tx.Cursor()
+    		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+    			cursor_group := types.CreateGroupFromString(string(k))
+    			for _, group := range groupdirs {
+    				for _, ancestor := range cursor_group.GetAncestors(group) {
+    					visited_groups[ancestor] = true
+    					if strat == walk_level && ancestor != group {
+    						break
+    					}
+    				}
+    			}
+    		}
 
-		return nil
-	})
+    		return nil
+    	})
+    }
 
 	for _, groupdir := range groupdirs {
 		// Check for the group itself. It could be a folder or a .tt file.
 		if !groupdir.IsZero() {
-			_, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()))
 			_, file_err := os.Stat(filepath.Join(data_dir, groupdir.String()))
+			if !errors.Is(file_err, fs.ErrNotExist) {
+				if _, exists := visited_groups[groupdir]; !exists {
+					visited_groups[groupdir] = true
+				}
+			}
 
-			if !errors.Is(folder_err, fs.ErrNotExist) || !errors.Is(file_err, fs.ErrNotExist) {
+			_, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()))
+			if (strat == walk_recursive || strat == walk_level) && !errors.Is(folder_err, fs.ErrNotExist) {
 				if _, exists := visited_groups[groupdir]; !exists {
 					visited_groups[groupdir] = true
 				}
 			}
 		}
-
-		// Check the cache. Exact match or begins with .String() + "/".
-		// Do I need to split up the groups based on subdirs? Yes I do.
-		// How do I keep the order pretty?
-		// I probably have to load everything up at startup.
 
 		// Check for all sub groups.
 		groupdir_str := groupdir.String()
