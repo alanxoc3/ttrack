@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/alanxoc3/ttrack/internal/ttdb"
@@ -27,43 +28,13 @@ type State struct {
 	BeginDate types.Date
 	EndDate   types.Date
 	Recursive bool
+	Cached    bool
+    Stored    bool
 	Daily     bool
 	Groups    []types.Group
 	Date      types.Date
 	Now       time.Time
 	Duration  types.DaySeconds
-}
-
-func CpFunc(s *State) string {
-	/*
-		    srcGroup := s.Groups[0]
-		    dstGroup := s.Groups[0]
-		    beg_date := s.BeginDate.ToDate()
-		    end_date := s.EndDate.ToDate()
-
-			ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
-				m := getDateMap(tx, srcGroup, beg_date.String(), end_date.String())
-				if len(m) == 0 {
-					return nil
-				}
-
-				dstBucket, err := tx.CreateBucketIfNotExists([]byte(dstGroup))
-				if err != nil {
-					return err
-				}
-
-				rec, err := dstBucket.CreateBucketIfNotExists([]byte("rec"))
-				if err != nil {
-					return err
-				}
-
-				for k, v := range m {
-					ttdb.AddTimestampToBucket(rec, k, v)
-				}
-				return nil
-			})
-	*/
-	return ""
 }
 
 // No files are deleted, but files can be added. Files are cleaned too.
@@ -102,7 +73,7 @@ func TidyFunc(s *State) string {
 	})
 
     // Clean existing files.
-	groups := walkThroughGroups("", s.DataDir, []types.Group{types.CreateGroupFromString("")}, walk_files)
+	groups := walkThroughGroups("", s.DataDir, []types.Group{types.CreateGroupFromString("")}, walk_files, false, true)
 	for group := range groups {
 		ttfile.ModifyTime(filepath.Join(s.DataDir, group.Filename()), cache[group].date, func(ds types.DaySeconds) types.DaySeconds {
 			return ds.Add(cache[group].seconds)
@@ -146,47 +117,51 @@ func AggFunc(s *State) string {
 	date_map := map[types.Date]types.DaySeconds{}
 
 	// STEP 1: Get the groups recursively.
-	groupMap := walkThroughGroups(s.CacheDir, s.DataDir, s.Groups, walk_recursive)
+	groupMap := walkThroughGroups(s.CacheDir, s.DataDir, s.Groups, walk_recursive, s.Cached, s.Stored)
 
 	// STEP 2: Populate from the cache.
-	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		for group := range groupMap {
-			b := tx.Bucket([]byte(group.String()))
-			if b == nil {
-				continue
-			}
+    if s.Cached {
+    	ttdb.ViewCmd(s.CacheDir, func(tx *bolt.Tx) error {
+    		for group := range groupMap {
+    			b := tx.Bucket([]byte(group.String()))
+    			if b == nil {
+    				continue
+    			}
 
-			beg_ts, end_ts, timeout := expandGroup(b)
-			duration, _ := calcDuration(s.Now, beg_ts, end_ts, timeout)
+    			beg_ts, end_ts, timeout := expandGroup(b)
+    			duration, _ := calcDuration(s.Now, beg_ts, end_ts, timeout)
 
-			date_key := *types.CreateDateFromTime(beg_ts)
+    			date_key := *types.CreateDateFromTime(beg_ts)
 
-			if types.IsDateBetween(s.BeginDate, date_key, s.EndDate) {
-				if date_map_val, exists := date_map[date_key]; exists {
-					date_map[date_key] = date_map_val.Add(duration)
-				} else {
-					date_map[date_key] = duration
-				}
-			}
-		}
+    			if types.IsDateBetween(s.BeginDate, date_key, s.EndDate) {
+    				if date_map_val, exists := date_map[date_key]; exists {
+    					date_map[date_key] = date_map_val.Add(duration)
+    				} else {
+    					date_map[date_key] = duration
+    				}
+    			}
+    		}
 
-		return nil
-	})
+    		return nil
+    	})
+    }
 
 	// STEP 3: Populate from files.
-	for group := range groupMap {
-		local_date_map := ttfile.GetDateSeconds(filepath.Join(s.DataDir, group.Filename()))
+    if s.Stored {
+    	for group := range groupMap {
+    		local_date_map := ttfile.GetDateSeconds(filepath.Join(s.DataDir, group.Filename()))
 
-		for k, v := range local_date_map {
-			if types.IsDateBetween(s.BeginDate, k, s.EndDate) {
-				if date_map_val, exists := date_map[k]; exists {
-					date_map[k] = date_map_val.Add(v)
-				} else {
-					date_map[k] = v
-				}
-			}
-		}
-	}
+    		for k, v := range local_date_map {
+    			if types.IsDateBetween(s.BeginDate, k, s.EndDate) {
+    				if date_map_val, exists := date_map[k]; exists {
+    					date_map[k] = date_map_val.Add(v)
+    				} else {
+    					date_map[k] = v
+    				}
+    			}
+    		}
+    	}
+    }
 
     output := ""
 	if s.Daily {
@@ -208,18 +183,29 @@ func AggFunc(s *State) string {
 		}
 		output += fmt.Sprintf("%s\n", totalSeconds.String())
 	}
+
 	return output
 }
 
-func DelFunc(s *State) string {
-	group := s.Groups[0]
+func ResetFunc(s *State) string {
+    group := s.Groups[0]
 	ttdb.UpdateCmd(s.CacheDir, func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(group.String()))
-		if b == nil {
-			return nil
+		c := tx.Cursor()
+		bucketsToDelete := [][]byte{}
+
+		// All items in tx cursor is guaranteed to be a bucket.
+		for k, _ := c.First(); k != nil; k, _ = c.Next() {
+		    kstr := string(k)
+    		if group.IsZero() || kstr == group.String() || strings.HasPrefix(kstr, group.String() + "/") {
+        		bucketsToDelete = append(bucketsToDelete, k)
+    		}
 		}
 
-		tx.DeleteBucket([]byte(group.String()))
+		for _, v := range bucketsToDelete {
+            // Ignoring error code, because there isn't much to do if there is an error.
+            tx.DeleteBucket(v)
+		}
+
 		return nil
 	})
 
@@ -237,7 +223,7 @@ func LsFunc(s *State) string {
 		strat = walk_recursive
 	}
 
-	group_map := walkThroughGroups(s.CacheDir, s.DataDir, groups, strat)
+	group_map := walkThroughGroups(s.CacheDir, s.DataDir, groups, strat, s.Cached, s.Stored)
 	group_list := make([]string, 0, len(group_map))
 	for k := range group_map {
 		group_list = append(group_list, k.String())

@@ -101,10 +101,10 @@ func getListOfGroups(data_dir string, strat walkstrategy) []string {
 	return groups
 }
 
-func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, strat walkstrategy) map[types.Group]bool {
+func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, strat walkstrategy, cached, stored bool) map[types.Group]bool {
 	visited_groups := map[types.Group]bool{}
 
-    if strat == walk_level || strat == walk_recursive {
+    if cached && (strat == walk_level || strat == walk_recursive) {
     	ttdb.ViewCmd(cache_dir, func(tx *bolt.Tx) error {
     		c := tx.Cursor()
     		for k, _ := c.First(); k != nil; k, _ = c.Next() {
@@ -123,35 +123,37 @@ func walkThroughGroups(cache_dir, data_dir string, groupdirs []types.Group, stra
     	})
     }
 
-	for _, groupdir := range groupdirs {
-		// Check for the group itself. It could be a folder or a .tt file.
-		if !groupdir.IsZero() {
-			_, file_err := os.Stat(filepath.Join(data_dir, groupdir.String()))
-			if !errors.Is(file_err, fs.ErrNotExist) {
-				if _, exists := visited_groups[groupdir]; !exists {
-					visited_groups[groupdir] = true
-				}
-			}
+    if stored {
+    	for _, groupdir := range groupdirs {
+    		// Check for the group itself. It could be a folder or a .tt file.
+    		if !groupdir.IsZero() {
+    			_, file_err := os.Stat(filepath.Join(data_dir, groupdir.String()))
+    			if !errors.Is(file_err, fs.ErrNotExist) {
+    				if _, exists := visited_groups[groupdir]; !exists {
+    					visited_groups[groupdir] = true
+    				}
+    			}
 
-			_, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()))
-			if (strat == walk_recursive || strat == walk_level) && !errors.Is(folder_err, fs.ErrNotExist) {
-				if _, exists := visited_groups[groupdir]; !exists {
-					visited_groups[groupdir] = true
-				}
-			}
-		}
+    			_, folder_err := os.Stat(filepath.Join(data_dir, groupdir.Filename()))
+    			if (strat == walk_level || strat == walk_recursive) && !errors.Is(folder_err, fs.ErrNotExist) {
+    				if _, exists := visited_groups[groupdir]; !exists {
+    					visited_groups[groupdir] = true
+    				}
+    			}
+    		}
 
-		// Check for all sub groups.
-		groupdir_str := groupdir.String()
-		groups := getListOfGroups(filepath.Join(data_dir, groupdir_str), strat)
-		for _, group := range groups {
-			group_with_path := types.CreateGroupFromString(filepath.Join(groupdir_str, group))
+    		// Check for all sub groups.
+    		groupdir_str := groupdir.String()
+    		groups := getListOfGroups(filepath.Join(data_dir, groupdir_str), strat)
+    		for _, group := range groups {
+    			group_with_path := types.CreateGroupFromString(filepath.Join(groupdir_str, group))
 
-			if _, exists := visited_groups[group_with_path]; !exists {
-				visited_groups[group_with_path] = true
-			}
-		}
-	}
+    			if _, exists := visited_groups[group_with_path]; !exists {
+    				visited_groups[group_with_path] = true
+    			}
+    		}
+    	}
+    }
 
 	return visited_groups
 }
