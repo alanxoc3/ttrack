@@ -264,7 +264,7 @@ func RecFunc(s *State) string {
 		beg_ts, end_ts, timeout := expandGroup(b)
 		duration, isFinal := calcDuration(s.Now, beg_ts, end_ts, timeout)
 
-		if !duration.IsZero() {
+		if isFinal && !duration.IsZero() {
 			timestamp_to_write = types.CreateDateFromTime(beg_ts)
 			seconds_to_write = &duration
 		}
