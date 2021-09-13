@@ -26,6 +26,10 @@ func parseRecArgs(args []string, s *cmds.State) {
 	s.Duration = types.CreateSecondsFromDuration(dur)
 }
 
+func parseGroup(args []string, s *cmds.State) {
+	s.Groups = []types.Group{types.CreateGroupFromString(args[0])}
+}
+
 func parseGroups(args []string, s *cmds.State) {
     groups := []types.Group{}
     for _, v := range args {
@@ -57,6 +61,11 @@ func parseNothing(args []string, s *cmds.State) {
 func createCmd(s *cmds.State, pf parseFunc, ef execFunc) *cobra.Command {
 	return &cobra.Command{
         Run: func(cmd *cobra.Command, args []string) {
+            if !s.Cached && !s.Stored {
+                s.Cached = true
+                s.Stored = true
+            }
+
             pf(args, s)
             output := ef(s)
             if output != "" {
@@ -103,35 +112,29 @@ func main() {
 
 	addCmd     := createCmd(&s, parseSetArgs, cmds.AddFunc)
 	aggCmd     := createCmd(&s, parseGroups,  cmds.AggFunc)
-	cpCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
-	lsCmd    := createCmd(&s,   parseGroups, cmds.LsFunc)
-	mvCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
+	lsCmd      := createCmd(&s, parseGroups,  cmds.LsFunc)
 	recCmd     := createCmd(&s, parseRecArgs, cmds.RecFunc)
-	rmCmd      := createCmd(&s, parseGroups,  func(s *cmds.State)string { return "in implementation" })
+	resetCmd   := createCmd(&s, parseGroup,   cmds.ResetFunc)
 	setCmd     := createCmd(&s, parseSetArgs, cmds.SetFunc)
 	subCmd     := createCmd(&s, parseSetArgs, cmds.SubFunc)
 	tidyCmd    := createCmd(&s, parseNothing, cmds.TidyFunc)
 	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State)string { return "ttrack " + version })
 
+	aggCmd.Flags().BoolVarP(&s.Cached,    "cached",     "c", false, "only aggregate for cached data")
 	aggCmd.Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
+	aggCmd.Flags().BoolVarP(&s.Stored,    "stored",     "s", false, "only aggregate for stored data")
 	aggCmd.Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only aggregate dates after or equal to this")
 	aggCmd.Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only aggregate dates before or equal to this")
-	cpCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only copy dates after or equal to this")
-	cpCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only copy dates before or equal to this")
+
+	lsCmd .Flags().BoolVarP(&s.Cached,    "cached",     "c", false, "only list cached groups")
 	lsCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "list subgroups recursively")
-	mvCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only move/merge dates after or equal to this")
-	mvCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only move/merge dates before or equal to this")
-	rmCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "delete records in subgroups too")
-	rmCmd .Flags().VarPF   (&s.BeginDate, "begin-date", "b",        "only delete records after or equal to this")
-	rmCmd .Flags().VarPF   (&s.EndDate,   "end-date",   "e",        "only delete records before or equal to this")
+	lsCmd .Flags().BoolVarP(&s.Stored,    "stored",     "s", false, "only list stored groups")
 
 	setCmdMeta(app, addCmd    , 3, true , "add <group> <date> <duration>", "adds the duration for a group's date")
-	setCmdMeta(app, aggCmd    , 1, false, "agg <group>..."               , "aggregate dates for range into single duration")
-	setCmdMeta(app, cpCmd     , 2, false, "cp <src-group>... <dst-group>", "copy/merge groups")
+	setCmdMeta(app, aggCmd    , 0, false, "agg [<group>]..."             , "aggregate durations for date range")
 	setCmdMeta(app, lsCmd     , 0, false, "ls [<group>]..."              , "list groups")
-	setCmdMeta(app, mvCmd     , 2, false, "mv <src-group>... <dst-group>", "rename/merge groups")
 	setCmdMeta(app, recCmd    , 2, true , "rec <group> <duration>"       , "record current time")
-	setCmdMeta(app, rmCmd     , 1, false, "rm <group>..."                , "remove a group")
+	setCmdMeta(app, resetCmd  , 1, true,  "reset <group>"                , "resets a group's recording")
 	setCmdMeta(app, setCmd    , 3, true , "set <group> <date> <duration>", "sets the duration for a group's date")
 	setCmdMeta(app, subCmd    , 3, true , "sub <group> <date> <duration>", "subtracts the duration for a group's date")
 	setCmdMeta(app, tidyCmd   , 0, true , "tidy"                         , "clean up all the files ttrack uses")

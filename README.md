@@ -55,7 +55,8 @@ set-hook -g alert-activity "run-shell 'ttrack rec tmux 5s'"
 hook global -group ttrack RawKey . %{
   evaluate-commands %sh{
     {
-      [ ! -z "$(command -v ttrack)" ] && ttrack rec -- "kak/$kak_bufname" 5s
+      [[ $(basename $kak_bufname) =~ '.' ]] && ttrack_name="ext:${kak_bufname##*.}" || ttrack_name="misc"
+      [ ! -z "$(command -v ttrack)" ] && ttrack rec "kak/$ttrack_name" 5s
     } > /dev/null 2>&1 < /dev/null &
   }
 }
@@ -127,18 +128,16 @@ ttrack [--help] [--version] <command>
 ttrack help
 ttrack version
 
-ttrack tidy --cached --stored
-ttrack ls [<group>...] --recursive --cached --stored
-
 ttrack rec <group> 15s
+ttrack reset <group>
+ttrack tidy
+
 ttrack set <group> 20m30s [2021-01-01]
 ttrack add <group> 20m30s [2021-01-01]
 ttrack sub <group> 20m30s [2021-01-01]
 
-ttrack mv  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
-ttrack cp  <group>... <group> --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
-ttrack rm  <group>...         --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
-ttrack agg <group>... --daily --begin-date=2021-01-01 --end-date=2021-01-05 --cached --stored
+ttrack ls  [<group>...] --cached --stored
+ttrack agg [<group>...] --cached --stored --daily --begin-date=2021-01-01 --end-date=2021-01-05
 ```
 
 Groups naming rules:

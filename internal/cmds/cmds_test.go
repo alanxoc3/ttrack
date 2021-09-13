@@ -31,6 +31,8 @@ func mkstate(cache, data, group, timestamp string) *cmds.State {
         DataDir: data,
         Groups: []types.Group{types.CreateGroupFromString(group)},
         Now: now,
+        Cached: true,
+        Stored: true,
         Date: *date,
     }
 }
@@ -91,7 +93,7 @@ func TestTidyExistingGroup(t *testing.T) {
 func TestLsRecursiveCache(t *testing.T) {
 	execTest(t, func(cache, data string) {
  	    cmds.RecFunc(mkstate_dur(cache, data, "a/b/c/d", "2021-01-01", "3s"))
- 	    str := cmds.LsFunc(&cmds.State{CacheDir: cache, DataDir: data, Recursive: true})
+ 	    str := cmds.LsFunc(&cmds.State{CacheDir: cache, DataDir: data, Recursive: true, Cached: true})
  	    assert.Equal(t, "a\na/b\na/b/c\na/b/c/d\n", str)
 	})
 }
@@ -99,7 +101,7 @@ func TestLsRecursiveCache(t *testing.T) {
 func TestLsRecursiveFile(t *testing.T) {
 	execTest(t, func(cache, data string) {
  	    cmds.AddFunc(mkstate_dur(cache, data, "a/b/c/d", "2021-01-01", "3s"))
- 	    str := cmds.LsFunc(&cmds.State{CacheDir: cache, DataDir: data, Recursive: true})
+ 	    str := cmds.LsFunc(&cmds.State{CacheDir: cache, DataDir: data, Recursive: true, Stored: true})
  	    assert.Equal(t, "a\na/b\na/b/c\na/b/c/d\n", str)
 	})
 }
