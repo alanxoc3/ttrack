@@ -114,10 +114,15 @@ func SubFunc(s *State) string {
 
 // TODO: Steps 2 & 3 below could be multi-threaded.
 func AggFunc(s *State) string {
+    groups := s.Groups
+	if len(groups) == 0 {
+		groups = []types.Group{types.CreateGroupFromString("")}
+	}
+
 	date_map := map[types.Date]types.DaySeconds{}
 
 	// STEP 1: Get the groups recursively.
-	groupMap := walkThroughGroups(s.CacheDir, s.DataDir, s.Groups, walk_recursive, s.Cached, s.Stored)
+	groupMap := walkThroughGroups(s.CacheDir, s.DataDir, groups, walk_recursive, s.Cached, s.Stored)
 
 	// STEP 2: Populate from the cache.
     if s.Cached {

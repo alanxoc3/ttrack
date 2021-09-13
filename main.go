@@ -32,22 +32,28 @@ func parseGroup(args []string, s *cmds.State) {
 
 func parseGroups(args []string, s *cmds.State) {
     groups := []types.Group{}
+
     for _, v := range args {
         groups = append(groups, types.CreateGroupFromString(v))
     }
+
     s.Groups = groups
 }
 
 func parseSetArgs(args []string, s *cmds.State) {
-	ts, tserr := types.CreateDateFromString(args[1])
-	if tserr != nil {
-		panic(tserr)
-	}
-
-	dur, durerr := time.ParseDuration(args[2])
+	dur, durerr := time.ParseDuration(args[1])
 	if durerr != nil {
 		panic(durerr)
 	}
+
+    ts := types.CreateDateFromTime(time.Now())
+    if len(args) == 3 {
+        var tserr error
+    	ts, tserr = types.CreateDateFromString(args[2])
+    	if tserr != nil {
+    		panic(tserr)
+    	}
+    }
 
     s.Duration = types.CreateSecondsFromDuration(dur)
     s.Groups = []types.Group{types.CreateGroupFromString(args[0])}
@@ -87,11 +93,13 @@ func getEnvDir(appVar, xdgVar, homeFallback string) string {
 	}
 }
 
-func setCmdMeta(app, cmd *cobra.Command, argCount int, exact bool, use, short string) {
-    if exact {
-        cmd.Args = cobra.ExactArgs(argCount)
+func setCmdMeta(app, cmd *cobra.Command, argMin, argMax int, use, short string) {
+    if argMin == argMax {
+        cmd.Args = cobra.ExactArgs(argMin)
+    } else if argMax < 0 {
+        cmd.Args = cobra.MinimumNArgs(argMin)
     } else {
-        cmd.Args = cobra.MinimumNArgs(argCount)
+        cmd.Args = cobra.RangeArgs(argMin, argMax)
     }
 
     cmd.Use = use
@@ -130,15 +138,15 @@ func main() {
 	lsCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "list subgroups recursively")
 	lsCmd .Flags().BoolVarP(&s.Stored,    "stored",     "s", false, "only list stored groups")
 
-	setCmdMeta(app, addCmd    , 3, true , "add <group> <date> <duration>", "adds the duration for a group's date")
-	setCmdMeta(app, aggCmd    , 0, false, "agg [<group>]..."             , "aggregate durations for date range")
-	setCmdMeta(app, lsCmd     , 0, false, "ls [<group>]..."              , "list groups")
-	setCmdMeta(app, recCmd    , 2, true , "rec <group> <duration>"       , "record current time")
-	setCmdMeta(app, resetCmd  , 1, true,  "reset <group>"                , "resets a group's recording")
-	setCmdMeta(app, setCmd    , 3, true , "set <group> <date> <duration>", "sets the duration for a group's date")
-	setCmdMeta(app, subCmd    , 3, true , "sub <group> <date> <duration>", "subtracts the duration for a group's date")
-	setCmdMeta(app, tidyCmd   , 0, true , "tidy"                         , "clean up all the files ttrack uses")
-	setCmdMeta(app, versionCmd, 0, true , "version"                      , "print build information")
+	setCmdMeta(app, addCmd    , 2, 3 , "add <group> <duration> [<date>]", "adds the duration for a group's date (default is today)")
+	setCmdMeta(app, aggCmd    , 0, -1, "agg [<group>]..."               , "aggregate durations for date range")
+	setCmdMeta(app, lsCmd     , 0, -1, "ls [<group>]..."                , "list groups")
+	setCmdMeta(app, recCmd    , 2, 2 , "rec <group> <duration>"         , "record current time")
+	setCmdMeta(app, resetCmd  , 1, 1 , "reset <group>"                  , "resets a group's recording")
+	setCmdMeta(app, setCmd    , 2, 3 , "set <group> <duration> [<date>]", "sets the duration for a group's date (default is today)")
+	setCmdMeta(app, subCmd    , 2, 3 , "sub <group> <duration> [<date>]", "subtracts the duration for a group's date (default is today)")
+	setCmdMeta(app, tidyCmd   , 0, 0 , "tidy"                           , "clean up all the files ttrack uses")
+	setCmdMeta(app, versionCmd, 0, 0 , "version"                        , "print build information")
 
 	app.Execute()
 }

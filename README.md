@@ -108,8 +108,6 @@ The format of the bolt db file looks similar to, not taking serialization/marsha
 }, ...
 ```
 
-TODO: I think I might file locks here too.
-
 The text file format is also very simple. Here is an example of what it might look like:
 ```
 2021-01-01 10m33s
