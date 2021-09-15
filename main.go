@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"os"
 	"os/user"
+	"path/filepath"
+	"time"
 
-	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/alanxoc3/ttrack/internal/cmds"
+	"github.com/alanxoc3/ttrack/internal/types"
 	"github.com/spf13/cobra"
 )
 
@@ -87,9 +88,9 @@ func getEnvDir(appVar, xdgVar, homeFallback string) string {
 	} else if val, present := os.LookupEnv(xdgVar); present {
 		return val
 	} else if usr, err := user.Current(); err == nil {
-		return usr.HomeDir + homeFallback
+		return filepath.Join(usr.HomeDir, homeFallback)
 	} else {
-		return ""
+		return "."
 	}
 }
 
@@ -138,15 +139,15 @@ func main() {
 	lsCmd .Flags().BoolVarP(&s.Recursive, "recursive",  "r", false, "list subgroups recursively")
 	lsCmd .Flags().BoolVarP(&s.Stored,    "stored",     "s", false, "only list stored groups")
 
-	setCmdMeta(app, addCmd    , 2, 3 , "add <group> <duration> [<date>]", "adds the duration for a group's date (default is today)")
-	setCmdMeta(app, aggCmd    , 0, -1, "agg [<group>]..."               , "aggregate durations for date range")
-	setCmdMeta(app, lsCmd     , 0, -1, "ls [<group>]..."                , "list groups")
-	setCmdMeta(app, recCmd    , 2, 2 , "rec <group> <duration>"         , "record current time")
-	setCmdMeta(app, resetCmd  , 1, 1 , "reset <group>"                  , "resets a group's recording")
-	setCmdMeta(app, setCmd    , 2, 3 , "set <group> <duration> [<date>]", "sets the duration for a group's date (default is today)")
-	setCmdMeta(app, subCmd    , 2, 3 , "sub <group> <duration> [<date>]", "subtracts the duration for a group's date (default is today)")
-	setCmdMeta(app, tidyCmd   , 0, 0 , "tidy"                           , "clean up all the files ttrack uses")
-	setCmdMeta(app, versionCmd, 0, 0 , "version"                        , "print build information")
+	setCmdMeta(app, addCmd    , 2, 3 , "add <group> <duration> [<date>]", "Adds the duration for a group's date (default is today)")
+	setCmdMeta(app, aggCmd    , 0, -1, "agg [<group>]..."               , "Aggregate durations in groups or subgroups")
+	setCmdMeta(app, lsCmd     , 0, -1, "ls [<group>]..."                , "List groups or subgroups")
+	setCmdMeta(app, recCmd    , 2, 2 , "rec <group> <duration>"         , "Record duration for group to today")
+	setCmdMeta(app, resetCmd  , 1, 1 , "reset <group>"                  , "Resets a group's recording")
+	setCmdMeta(app, setCmd    , 2, 3 , "set <group> <duration> [<date>]", "Sets the duration for a group's date (default is today)")
+	setCmdMeta(app, subCmd    , 2, 3 , "sub <group> <duration> [<date>]", "Subtracts the duration for a group's date (default is today)")
+	setCmdMeta(app, tidyCmd   , 0, 0 , "tidy"                           , "Clean up all the files ttrack uses")
+	setCmdMeta(app, versionCmd, 0, 0 , "version"                        , "Print build information")
 
 	app.Execute()
 }
