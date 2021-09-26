@@ -103,13 +103,7 @@ Ttrack has very few dependencies outside of go's standard library. Here are all 
 
 ## Internal Details
 ### Folder Structure
-Ttrack uses one directory for a cache and one directory for data files, following the XDG standard.
-
-The cache directory is calculated by the following order until one succeeds:
-1. `$TTRACK_CACHE_DIR`
-2. `$XDG_CACHE_HOME/ttrack`
-3. `$HOME/.cache/ttrack`
-4. `./`
+Ttrack uses one directory for data and one directory for a cache, following the XDG standard.
 
 The data directory is calculated by the following order until one succeeds:
 1. `$TTRACK_DATA_DIR`
@@ -117,20 +111,14 @@ The data directory is calculated by the following order until one succeeds:
 3. `$HOME/.local/share/ttrack`
 4. `./`
 
-### Cache Directory
-Ttrack only uses one file in the cache directory named `db`. This file is a [BoltDB](https://github.com/etcd-io/bbolt) database file. The "rec" command stores time tracking information in this file until the timeout has been reached. The basic format of this database is:
-```
-"<group-name>": {
-  "out": 1m00s
-  "beg": 2021-01-01T07:34:59Z
-  "end": 2021-01-01T07:34:59Z
-}
-```
+The cache directory is calculated by the following order until one succeeds:
+1. `$TTRACK_CACHE_DIR`
+2. `$XDG_CACHE_HOME/ttrack`
+3. `$HOME/.cache/ttrack`
+4. `./`
 
 ### Data Directory
-Ttrack reads files ending in `.tt` in the data directory as well as subfolders containing `.tt` files.
-
-Ttrack text files looks like this:
+Within the data directory, files ending in `.tt` are read from and written to. Files not ending in `.tt` are ignored. These data files have a very simple format that looks like this:
 ```
 2021-01-01: 10m33s
 2021-01-02: 1h2m3s
@@ -145,3 +133,13 @@ Because groups are stored as files, there are some restrictions as to what a gro
 * Groups cannot contain the `/` character. This is used to separate groups into a folder structure.
 
 [isspace]: https://golang.org/pkg/unicode/#IsSpace
+
+### Cache Directory
+Within the cache directory, only one file named `db` is read from and written to. This file is a [BoltDB](https://github.com/etcd-io/bbolt) database file. Live time ttracking information is stored here to reduce the amount of writes to files in the data directory. The basic format of this database file is:
+```
+"<group-name>": {
+  "out": 1m00s
+  "beg": 2021-01-01T07:34:59Z
+  "end": 2021-01-01T07:34:59Z
+}
+```
