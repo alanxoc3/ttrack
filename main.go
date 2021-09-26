@@ -127,7 +127,7 @@ func main() {
 	setCmd     := createCmd(&s, parseSetArgs, cmds.SetFunc)
 	subCmd     := createCmd(&s, parseSetArgs, cmds.SubFunc)
 	tidyCmd    := createCmd(&s, parseNothing, cmds.TidyFunc)
-	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State)string { return "ttrack " + version })
+	versionCmd := createCmd(&s, parseNothing, func(s *cmds.State)string { return "ttrack " + version + "\n" })
 
 	aggCmd.Flags().BoolVarP(&s.Cached,    "cached",     "c", false, "only aggregate for cached data")
 	aggCmd.Flags().BoolVarP(&s.Daily,     "daily",      "d", false, "aggregate per day instead of all together")
