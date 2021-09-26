@@ -14,11 +14,11 @@ Ttrack is built with these things in mind:
 * Relatable. Ttrack is meant for people who want to set timed goals or view their trends on a daily basis according to their own timezone. Time is measured in hours/minutes/seconds, because most people don't operate at millisecond or nanosecond levels.
 
 ## Install
-Download the latest release from the [release page](https://github.com/alanxoc3/concards/releases). At the moment, only Linux and Mac are supported.
+Download the latest release from the [release page](https://github.com/alanxoc3/ttrack/releases). At the moment, only Linux and Mac are supported.
 
 If you have golang, you can install the latest updates from source. Keep in mind that the `main` branch is not guaranteed to be stable.
 ```bash
-go install github.com/alanxoc3/concards
+go install github.com/alanxoc3/ttrack
 ```
 
 ## Usage
