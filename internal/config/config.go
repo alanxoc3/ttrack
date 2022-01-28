@@ -7,6 +7,16 @@ import (
 )
 
 func GetAppDir(appName, appDirVar, xdgDirVar, homeFallback string) string {
+    originalPath := getAppDirNoSymlink(appName, appDirVar, xdgDirVar, homeFallback)
+
+    if newPath, err := filepath.EvalSymlinks(originalPath); err != nil {
+        return originalPath
+    } else {
+        return newPath
+    }
+}
+
+func getAppDirNoSymlink(appName, appDirVar, xdgDirVar, homeFallback string) string {
 	if val, present := os.LookupEnv(appDirVar); present {
 		return val
 	} else if val, present := os.LookupEnv(xdgDirVar); present {
